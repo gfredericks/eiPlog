@@ -1,5 +1,4 @@
-%% @author author <author@example.com>
-%% @copyright YYYY author.
+%% @author Gary Fredericks
 
 %% @doc Supervisor for the eiPlog application.
 

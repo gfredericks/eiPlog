@@ -1,3 +1,5 @@
+%% @author Gary Fredericks
+
 %
 % This only exists because I can't figure out any good way of storing
 %   an appropriately global variable in erlang.

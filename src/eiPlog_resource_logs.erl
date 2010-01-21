@@ -1,5 +1,4 @@
-%% @author author <author@example.com>
-%% @copyright YYYY author.
+%% @author Gary Fredericks
 %% @doc Example webmachine_resource.
 
 -module(eiPlog_resource_logs).
@@ -60,7 +59,7 @@ to_json(R, S) ->
     "DESC"->'DESC';
     _Else->'ASC'
   end,
-  [Limit, Page] = lists:map(fun(undefined)->undefined; (S)->list_to_integer(S) end, [Lim, Pag]),
+  [Limit, Page] = lists:map(fun(undefined)->undefined; (Str)->list_to_integer(Str) end, [Lim, Pag]),
   Logs = case Context of
     undefined->
       Ls = eiPlog_mysql:logs(AppName, EventName, Before, After, Key, Order, Limit, Page),

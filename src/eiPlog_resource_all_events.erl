@@ -1,5 +1,4 @@
-%% @author author <author@example.com>
-%% @copyright YYYY author.
+%% @author Gary Fredericks
 %% @doc Example webmachine_resource.
 
 -module(eiPlog_resource_all_events).
