@@ -26,22 +26,25 @@ query-string value for "key" must be present to decrypt the logs.
 
 **GET /logs/:appname/:eventname**
 
-Possible query-string values:
+Possible query-string values (the first is required):
 
--   "before": maximum "time" value, formatted "YYYYMMDDHHMMSS"
--   "after": minimum "time" value, formatted "YYYYMMDDHHMMSS"
--   "context": a specified value for the context - context will
+-   **"key"**: the key for decrypting the logs
+-   **"before"**: maximum "time" value, format: "YYYYMMDDHHMMSS"
+-   **"after"**: minimum "time" value, format: "YYYYMMDDHHMMSS"
+-   **"context"**: a specified value for the context - context will
     only be given in the return objects if it is **not**&nbsp;specified
     in the query string
--   "key": **required**&nbsp;- the key for decrypting the logs
+-   **"order"**: either "ASCENDING" or "DESCENDING"; otherwise order is unspecified
+-   **"limit"**: a positive integer, the maximum logs to return
+-   **"page"**: a positive integer; if "limit" was specified, this will do what
+    you would expect it to do, but I'm having trouble putting that in precise
+    language.
 
 > [{time: "some-time", details: details-string}, ...]
 >
 > or
 >
 > [{context: "some-context", time: "some-time", details: details-string}, ...]
->
-> (see below for the difference)
 
 ## **Managing Applications**
 
