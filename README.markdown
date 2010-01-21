@@ -68,6 +68,7 @@ several columns
 + **created\_at** datetime
 + **deleted\_at** datetime (null allowed)
 
+
 #### Indexes
 
 [:deleted\_at, :name]
@@ -78,6 +79,8 @@ several columns
 + **application\_id** integer
 + **created\_at** datetime
 + **deleted\_at** datetime (null allowed)
+
+
 #### Indexes
 
 [:deleted\_at, :application\_id, :name]
