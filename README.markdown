@@ -68,7 +68,6 @@ several columns
 + **created\_at** datetime
 + **deleted\_at** datetime (null allowed)
 
-
 #### Indexes
 
 [:deleted\_at, :name]
@@ -80,26 +79,22 @@ several columns
 + **created\_at** datetime
 + **deleted\_at** datetime (null allowed)
 
-
 #### Indexes
 
 [:deleted\_at, :application\_id, :name]
 ### logs
 
-id
-integer, key
-event\_id
-integer
-time
-datetime
-context
-string
-details
-text
++ **id** integer, key
++ **event\_id** integer
++ **time** datetime
++ **context** string
++ **details** text
+
 #### Indexes
 
 [:event\_id, :context, :time]
 [:event\_id, :time]
+
 ### deleted\_logs
 
 Identical to the \`logs\` table
