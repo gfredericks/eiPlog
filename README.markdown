@@ -14,46 +14,48 @@ considered one resource. So logging is in effect an update to a
 resource.
 ## Logging
 
-POST /logs/:appname/:eventname
-> Content should be a JSON string like:
+**POST /logs/:appname/:eventname**
+Content should be a JSON string like:
 
-> > {context: "some-context", details: "blah blah blah"}
+> {context: "some-context", details: "blah blah blah"}
 
 Both of the following routes can have query string parameters of
 "begin" and "end" formatted as "YYYYMMDDHHMMSS" to specify a
 timeframe. Either, neither, or both may be present. Additionally, a
 query-string value for "key" must be present to decrypt the logs.
-> GET /logs/:appname/:eventname
-> > returns [{time: "some-time", details:
-> > details-object*, context: "some-context"*}, ...]
-> > Possible query-string values:
+**GET /logs/:appname/:eventname**
+returns 
+> [{time: "some-time", details: details-object*, context: "some-context"*}, ...]
+Possible query-string values:
 
-> > -   "before": maximum "time" value, formatted "YYYYMMDDHHMMSS"
-> > -   "after": minimum "time" value, formatted "YYYYMMDDHHMMSS"
-> > -   "context": a specified value for the context - context will
-> >     only be given in the return objects if it is **not**&nbsp;specified
-> >     in the query string
-> > -   "key": **required**&nbsp;- the key for decrypting the logs
+-   "before": maximum "time" value, formatted "YYYYMMDDHHMMSS"
+-   "after": minimum "time" value, formatted "YYYYMMDDHHMMSS"
+-   "context": a specified value for the context - context will
+    only be given in the return objects if it is **not**&nbsp;specified
+    in the query string
+-   "key": **required**&nbsp;- the key for decrypting the logs
 
 ## **Managing Applications**
 
-GET /applications
-> returns ["appname1", "appname2", ...]
+**GET /applications**
+returns 
+> ["appname1", "appname2", ...]
 
-PUT /applications/:appname
-DELETE /applications/:appname
-> Internally marks application and its events as deleted and moves
-> all its logs to the archive table
+**PUT /applications/:appname**
+**DELETE /applications/:appname**
+Internally marks application and its events as deleted and moves
+all its logs to the archive table
 
 ## Managing Event Types
 
-GET /events/:appname
-> returns ["evname1", "evname2", ...]
+**GET /events/:appname**
+returns 
+> ["evname1", "evname2", ...]
 
-PUT /events/:appname/:eventname
-DELETE /events/:appname/:eventname
-> Internally marks event as deleted and moves all its logs to the
-> archive table
+**PUT /events/:appname/:eventname**
+**DELETE /events/:appname/:eventname**
+Internally marks event as deleted and moves all its logs to the
+archive table
 
 # Database Implementation
 
