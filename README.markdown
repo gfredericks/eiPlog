@@ -17,7 +17,9 @@ resource.
 **POST /logs/:appname/:eventname**
 Content should be a JSON string like:
 
-> {context: "some-context", details: "blah blah blah"}
+> {"context": "some-context", "details": "blah blah blah"}
+> // Be sure to include double quotes around the keys, which is
+> //   necessary for valid JSON
 
 Both of the following routes can have query string parameters of
 "begin" and "end" formatted as "YYYYMMDDHHMMSS" to specify a
@@ -28,15 +30,15 @@ query-string value for "key" must be present to decrypt the logs.
 
 Possible query-string values (the first is required):
 
--   **"key"**: the key for decrypting the logs
--   **"before"**: maximum "time" value, format: "YYYYMMDDHHMMSS"
--   **"after"**: minimum "time" value, format: "YYYYMMDDHHMMSS"
--   **"context"**: a specified value for the context - context will
+-   **key**: the key for decrypting the logs
+-   **before**: maximum "time" value, format: "YYYYMMDDHHMMSS"
+-   **after**: minimum "time" value, format: "YYYYMMDDHHMMSS"
+-   **context**: a specified value for the context - context will
     only be given in the return objects if it is **not**&nbsp;specified
     in the query string
--   **"order"**: either "ASCENDING" or "DESCENDING"; otherwise order is unspecified
--   **"limit"**: a positive integer, the maximum logs to return
--   **"page"**: a positive integer; if "limit" was specified, this will do what
+-   **order**: either "ASCENDING" or "DESCENDING"; otherwise order is unspecified
+-   **limit**: a positive integer, the maximum logs to return
+-   **page**: a positive integer; if "limit" was specified, this will do what
     you would expect it to do, but I'm having trouble putting that in precise
     language.
 
