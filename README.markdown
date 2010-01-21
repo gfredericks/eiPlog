@@ -26,14 +26,6 @@ query-string value for "key" must be present to decrypt the logs.
 
 **GET /logs/:appname/:eventname**
 
-> [{time: "some-time", details: details-string}, ...]
->
-> or
->
-> [{context: "some-context", time: "some-time", details: details-string}, ...]
->
-> (see below for the difference)
-
 ### Possible query-string values:
 
 -   "before": maximum "time" value, formatted "YYYYMMDDHHMMSS"
@@ -43,10 +35,18 @@ query-string value for "key" must be present to decrypt the logs.
     in the query string
 -   "key": **required**&nbsp;- the key for decrypting the logs
 
+> [{time: "some-time", details: details-string}, ...]
+>
+> or
+>
+> [{context: "some-context", time: "some-time", details: details-string}, ...]
+>
+> (see below for the difference)
+
 ## **Managing Applications**
 
 **GET /applications**
-returns 
+ 
 > ["appname1", "appname2", ...]
 
 **PUT /applications/:appname**
@@ -54,7 +54,9 @@ returns
 **DELETE /applications/:appname**
 
 Internally marks application and its events as deleted and moves
-all its logs to the archive table. This **cannot** be undone through
+all its logs to the archive table. 
+
+This **cannot** be undone through
 the API (it **can** be undone through direct SQL calls to the database,
 but that should not be done lightly, as it may create a naming conflict
 if a new application with the same name has been created).
@@ -62,7 +64,7 @@ if a new application with the same name has been created).
 ## Managing Event Types
 
 **GET /events/:appname**
-returns 
+
 > ["evname1", "evname2", ...]
 
 **PUT /events/:appname/:eventname**
@@ -71,6 +73,11 @@ returns
 
 Internally marks event as deleted and moves all its logs to the
 archive table
+
+This **cannot** be undone through
+the API (it **can** be undone through direct SQL calls to the database,
+but that should not be done lightly, as it may create a naming conflict
+if a new event with the same name and application has been created).
 
 # Database Implementation
 
