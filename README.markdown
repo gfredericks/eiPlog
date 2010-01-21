@@ -27,8 +27,11 @@ query-string value for "key" must be present to decrypt the logs.
 **GET /logs/:appname/:eventname**
 
 > [{time: "some-time", details: details-object}, ...]
+>
 > or
+>
 > [{context: "some-context", time: "some-time", details: details-object}, ...]
+>
 > (see below for the difference)
 
 ### Possible query-string values:
