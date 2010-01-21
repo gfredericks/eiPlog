@@ -23,8 +23,9 @@ Both of the following routes can have query string parameters of
 "begin" and "end" formatted as "YYYYMMDDHHMMSS" to specify a
 timeframe. Either, neither, or both may be present. Additionally, a
 query-string value for "key" must be present to decrypt the logs.
+
 **GET /logs/:appname/:eventname**
-returns 
+
 > [{time: "some-time", details: details-object*, context: "some-context"*}, ...]
 
 ### Possible query-string values:
