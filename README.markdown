@@ -26,7 +26,8 @@ query-string value for "key" must be present to decrypt the logs.
 **GET /logs/:appname/:eventname**
 returns 
 > [{time: "some-time", details: details-object*, context: "some-context"*}, ...]
-Possible query-string values:
+
+### Possible query-string values:
 
 -   "before": maximum "time" value, formatted "YYYYMMDDHHMMSS"
 -   "after": minimum "time" value, formatted "YYYYMMDDHHMMSS"
