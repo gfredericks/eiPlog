@@ -37,11 +37,12 @@ Possible query-string values (the first is required):
 -   **context**: a specified value for the context - context will
     only be given in the return objects if it is **not**&nbsp;specified
     in the query string
--   **order**: either "ASCENDING" or "DESCENDING"; otherwise order is unspecified
+-   **order**: either "ASC" or "DESC"; otherwise order is unspecified
 -   **limit**: a positive integer, the maximum logs to return
 -   **page**: a positive integer; if "limit" was specified, this will do what
     you would expect it to do, but I'm having trouble putting that in precise
-    language.
+    language. E.g., limit=30&page=1 returns logs 1..30, and limit=30&page=2 returns
+    logs 31..60 etc.
 
 > [{time: "some-time", details: details-string}, ...]
 >
