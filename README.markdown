@@ -50,7 +50,9 @@ returns
 > ["appname1", "appname2", ...]
 
 **PUT /applications/:appname**
+
 **DELETE /applications/:appname**
+
 Internally marks application and its events as deleted and moves
 all its logs to the archive table. This **cannot** be undone through
 the API (it **can** be undone through direct SQL calls to the database,
@@ -64,7 +66,9 @@ returns
 > ["evname1", "evname2", ...]
 
 **PUT /events/:appname/:eventname**
+
 **DELETE /events/:appname/:eventname**
+
 Internally marks event as deleted and moves all its logs to the
 archive table
 
