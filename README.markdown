@@ -63,10 +63,10 @@ several columns
 
 ### applications
 
-+ *id* integer, key
-+ *name* string
-+ *created\_at* datetime
-+ *deleted\_at* datetime (null allowed)
++ **id** integer, key
++ **name** string
++ **created\_at** datetime
++ **deleted\_at** datetime (null allowed)
 
 #### Indexes
 
