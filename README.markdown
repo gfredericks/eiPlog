@@ -73,16 +73,11 @@ several columns
 [:deleted\_at, :name]
 ### events
 
-id
-integer, key
-name
-string
-application\_id
-integer
-created\_at
-datetime
-deleted\_at
-datetime (null allowed)
++ **id** integer, key
++ **name** string
++ **application\_id** integer
++ **created\_at** datetime
++ **deleted\_at** datetime (null allowed)
 #### Indexes
 
 [:deleted\_at, :application\_id, :name]
