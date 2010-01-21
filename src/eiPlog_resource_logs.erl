@@ -42,27 +42,35 @@ process_post(R,S)->
 to_json(R, S) ->
   AppName = wrq:path_info(app_name, R),
   EventName = wrq:path_info(event_name, R),
-  Before = case wrq:get_qs_value("before", R) of
+  [Bef, Aft, Key, Context, Ord, Lim, Pag] = 
+    lists:map(fun(Str)->wrq:get_qs_value(Str,R) end, 
+      ["before", "after", "key", "context", "order", "limit", "page"]),
+  Before = case Bef of
     undefined->
       {datetime, {{3010,1,1}, {1,1,1}}};
     String1->parse_date(String1)
   end,
-  After = case wrq:get_qs_value("after", R) of
+  After = case Aft of
     undefined->
       {datetime, {{1995,1,1}, {1,1,1}}};
     String2->parse_date(String2)
   end,
-  Key = wrq:get_qs_value("key", R),
-  Logs = case wrq:get_qs_value("context", R) of
+  Order = case Ord of
+    "ASC"->'ASC';
+    "DESC"->'DESC';
+    _Else->'ASC'
+  end,
+  [Limit, Page] = lists:map(fun(undefined)->undefined; (S)->list_to_integer(S) end, [Lim, Pag]),
+  Logs = case Context of
     undefined->
-      Ls = eiPlog_mysql:some_logs(AppName, EventName, Before, After, Key),
+      Ls = eiPlog_mysql:logs(AppName, EventName, Before, After, Key, Order, Limit, Page),
       lists:map(fun([Con,Tim,Det])->
             {obj, [{"time", date_to_string(Tim)},
                    {"context", Con},
                    {"details", Det}]}
           end, Ls);
     Context->
-      Ls = eiPlog_mysql:some_logs(AppName, EventName, Context, Before, After, Key),
+      Ls = eiPlog_mysql:logs(AppName, EventName, Context, Before, After, Key, Order, Limit, Page),
       lists:map(fun([Tim,Det])->
             {obj, [{"time", date_to_string(Tim)},
                    {"details", Det}]}

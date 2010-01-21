@@ -1,9 +1,7 @@
 -module(eiPlog_mysql).
 -export([init/0,
-         some_logs/5, 
-         some_logs/6, 
-         all_logs/3, 
-         all_logs/4, 
+         logs/8, 
+         logs/9, 
          add_log/5, 
          new_app/1, 
          new_event/2, 
@@ -20,10 +18,10 @@ connect()->
   mysql:connect(p1, "localhost", undefined, "rails", "railspw", "eiPlog", true),
   mysql:connect(p1, "localhost", undefined, "rails", "railspw", "eiPlog", true),
   mysql:prepare(logs_add, << "INSERT INTO logs(event_id, time, context, details) VALUES(?, now(), ?, AES_ENCRYPT(?,?))" >>),
-  mysql:prepare(logs_all_by_event, << "SELECT context, time, AES_DECRYPT(details,?) FROM logs WHERE event_id = ?" >>),
-  mysql:prepare(logs_all_by_context, << "SELECT time, AES_DECRYPT(details,?) FROM logs WHERE event_id = ? AND context = ?" >>),
-  mysql:prepare(logs_some_by_event, << "SELECT context, time, AES_DECRYPT(details,?) FROM logs WHERE event_id = ? AND time >= ? AND time <= ?" >>),
-  mysql:prepare(logs_some_by_context, << "SELECT time, AES_DECRYPT(details,?) FROM logs WHERE event_id = ? AND context = ? AND time >= ? AND time <= ?">>),
+  mysql:prepare(logs_by_event_asc, << "SELECT context, time, AES_DECRYPT(details,?) FROM logs WHERE event_id = ? AND time >= ? AND time <= ? ORDER BY time ASC LIMIT ?, ?" >>),
+  mysql:prepare(logs_by_context_asc, << "SELECT time, AES_DECRYPT(details,?) FROM logs WHERE event_id = ? AND context = ? AND time >= ? AND time <= ? ORDER BY time ASC LIMIT ?, ?">>),
+  mysql:prepare(logs_by_event_desc, << "SELECT context, time, AES_DECRYPT(details,?) FROM logs WHERE event_id = ? AND time >= ? AND time <= ? ORDER BY time DESC LIMIT ?, ?" >>),
+  mysql:prepare(logs_by_context_desc, << "SELECT time, AES_DECRYPT(details,?) FROM logs WHERE event_id = ? AND context = ? AND time >= ? AND time <= ? ORDER BY time DESC LIMIT ?, ?">>),
   mysql:prepare(applications, <<"SELECT id, name FROM applications WHERE deleted_at IS NULL">>),
   mysql:prepare(get_app_id, <<"SELECT id FROM applications WHERE deleted_at IS NULL AND name = ?">>),
   mysql:prepare(new_app, <<"INSERT INTO applications(name,created_at) VALUES(?,now())">>),
@@ -51,25 +49,25 @@ get_event_id(AppName, EventName, Fun)->
     {error, Problem}->Problem
   end.
 
-some_logs(AppName, EventName, Context, Before, After, Key)->
+logs(AppName, EventName, Context, Before, After, Key, Order, Limit, Page)->
+  {Offset,RowCount} = limit_page(Limit,Page),
   get_event_id(AppName, EventName, fun(EventId)->
-      execute(logs_some_by_context, [Key, EventId, Context, After, Before])
+      execute(case Order of 'ASC'->logs_by_context_asc; 'DESC'->logs_by_context_desc end, [Key, EventId, Context, After, Before, Offset, RowCount])
     end).
 
-some_logs(AppName, EventName, Before, After, Key)->
+logs(AppName, EventName, Before, After, Key, Order, Limit, Page)->
+  {Offset,RowCount} = limit_page(Limit,Page),
   get_event_id(AppName, EventName, fun(EventId)->
-      execute(logs_some_by_event, [Key, EventId, After, Before])
+      execute(case Order of 'ASC'->logs_by_event_asc; 'DESC'->logs_by_event_desc end, [Key, EventId, After, Before, Offset, RowCount])
     end).
 
-all_logs(AppName, EventName, Key)->
-  get_event_id(AppName, EventName, fun(EventId)->
-      execute(logs_all_by_event, [Key, EventId])
-    end).
-
-all_logs(AppName, EventName, Context, Key)->
-  get_event_id(AppName, EventName, fun(EventId)->
-      execute(logs_all_by_context, [Key, EventId, Context])
-    end).
+limit_page(Limit, Page)->
+  case Limit of
+    undefined->{0, 10000000000000000} ;
+    A when is_integer(A), A > 0 -> 
+      P = case Page of B when is_integer(B), B > 0 ->B; _Else->1 end,
+      {(P-1)*Limit, Limit}
+  end.
 
 add_log(AppName, EventName, Context, Details, Key)->
   get_event_id(AppName, EventName, fun(EventId)->

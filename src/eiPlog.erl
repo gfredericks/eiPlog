@@ -5,7 +5,7 @@
 
 -module(eiPlog).
 -author('author <author@example.com>').
--export([start/1, start_link/0, stop/0]).
+-export([start/0, start/1, start_link/0, stop/0]).
 
 ensure_started(App) ->
     case application:start(App) of
@@ -27,6 +27,11 @@ start_link() ->
 
 %% @spec start() -> ok
 %% @doc Start the eiPlog server.
+start()->
+  % Key missing
+  io:format("Missing encryption key argument~n"),
+  halt().
+
 start([Key]) ->
     eiPlog_deps:ensure(),
     ensure_started(crypto),

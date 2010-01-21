@@ -22,11 +22,6 @@ Content should be a JSON string like:
 > Be sure to include double quotes around the keys, which is
 > necessary for valid JSON
 
-Both of the following routes can have query string parameters of
-"begin" and "end" formatted as "YYYYMMDDHHMMSS" to specify a
-timeframe. Either, neither, or both may be present. Additionally, a
-query-string value for "key" must be present to decrypt the logs.
-
 **GET /logs/:appname/:eventname**
 
 Possible query-string values (the first is required):
