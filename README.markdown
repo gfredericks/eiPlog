@@ -18,7 +18,9 @@ resource.
 Content should be a JSON string like:
 
 > {"context": "some-context", "details": "blah blah blah"}
+>
 > // Be sure to include double quotes around the keys, which is
+>
 > //   necessary for valid JSON
 
 Both of the following routes can have query string parameters of
