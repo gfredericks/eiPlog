@@ -118,9 +118,3 @@ invisible through the API), and all of the related entries in the
 logs table are moved to deleted\_logs (this is only done for
 efficiency - theoretically they could be left in the logs table
 with no malfunction).
-[Edit this page (if you have permission)](Doc?tab=edit&dr=true&id=dfbwnx95_85d3nnfvhr "Edit this page")
-|
-[Google Docs -- Web word processing, presentations and spreadsheets.](/ "Learn more about Google Docs")
-&nbsp;
-
-
