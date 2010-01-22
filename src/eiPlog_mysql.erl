@@ -1,7 +1,7 @@
 %% @author Gary Fredericks
 
 -module(eiPlog_mysql).
--export([init/0,
+-export([init/2,
          logs/8, 
          logs/9, 
          add_log/5, 
@@ -123,8 +123,24 @@ events(AppName)->
 %   performs all changes to those tables
 init()->
   erlang:display("I AM INITING"),
-  register(librarian, spawn(fun librarian/0)),
+  register(librarian, spawn(fun librarian_supervisor/0)),
   ok.
+
+librarian_supervisor()->
+  % Debugging
+  Pid = spawn(fun librarian/0),
+  register(Pid, real_librarian),
+  monitor(process, Pid),
+  librarian_supervisor([]).
+
+librarian_supervisor(Calls)->
+  receive
+    {'DOWN', _, process, _, _}->
+      io:format("LIBRARIAN DOWN!!! Calls were:~n~p~n", [lists:reverse(Calls)]);
+    Anything->
+      real_librarian ! Anything,
+      librarian_supervisor([Anything|Calls])
+  end.
 
 librarian()->
   Apps = dict:from_list([{binary_to_list(Name),Id} || [Id,Name] <- execute(applications)]),
@@ -223,4 +239,4 @@ librarian_delete_event(EventId)->
   execute(move_logs, [EventId]),
   execute(delete_logs, [EventId]),
   execute(delete_event, [EventId]).
-  
+ 
