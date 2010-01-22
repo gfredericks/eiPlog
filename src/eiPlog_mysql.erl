@@ -1,7 +1,7 @@
 %% @author Gary Fredericks
 
 -module(eiPlog_mysql).
--export([init/2,
+-export([init/0,
          logs/8, 
          logs/9, 
          add_log/5, 
