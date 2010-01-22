@@ -130,7 +130,7 @@ librarian_supervisor()->
   % Debugging
   Pid = spawn(fun librarian/0),
   register(Pid, real_librarian),
-  monitor(process, Pid),
+  erlang:monitor(process, Pid),
   librarian_supervisor([]).
 
 librarian_supervisor(Calls)->
