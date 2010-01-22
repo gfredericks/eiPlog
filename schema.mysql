@@ -3,7 +3,7 @@ CREATE TABLE IF NOT EXISTS applications(
     name VARCHAR(30) NOT NULL,
     created_at DATETIME NOT NULL,
     deleted_at DATETIME,
-    INDEX(deleted_at, name));
+    INDEX(deleted_at, name)) ENGINE=InnoDB;
 
 CREATE TABLE IF NOT EXISTS events(
     id INT NOT NULL AUTO_INCREMENT, PRIMARY KEY(id),
@@ -11,7 +11,7 @@ CREATE TABLE IF NOT EXISTS events(
     application_id INT NOT NULL,
     created_at DATETIME NOT NULL,
     deleted_at DATETIME,
-    INDEX(deleted_at, application_id, name));
+    INDEX(deleted_at, application_id, name)) ENGINE=InnoDB;
 
 CREATE TABLE IF NOT EXISTS logs(
     id INT NOT NULL AUTO_INCREMENT, PRIMARY KEY(id),
@@ -20,7 +20,7 @@ CREATE TABLE IF NOT EXISTS logs(
     context VARCHAR(255),
     details TEXT NOT NULL,
     INDEX(event_id, context, time),
-    INDEX(event_id, time));
+    INDEX(event_id, time)) ENGINE=InnoDB;
 
 CREATE TABLE IF NOT EXISTS deleted_logs LIKE logs;
 
