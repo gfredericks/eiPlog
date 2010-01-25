@@ -14,7 +14,7 @@
 -compile(export_all).
 
 connect()->
-  Props = dict:from_list(file:consult("properties")),
+  Props = dict:from_list(element(2, file:consult("properties"))),
   [Host, User, Password, Database] = lists:map(fun(X)->
         dict:fetch(X, Props) 
     end, [host, user, password, database]),
