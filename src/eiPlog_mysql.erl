@@ -12,6 +12,7 @@
          applications/0, 
          events/1]).
 -compile(export_all).
+-define(MAX_NAME_LENGTH, 255).
 
 connect()->
   {ok, [L]} = file:consult("properties"),
@@ -128,24 +129,8 @@ events(AppName)->
 %   performs all changes to those tables
 init()->
   erlang:display("I AM INITING"),
-  register(librarian, spawn(fun librarian_supervisor/0)),
+  register(librarian, spawn(fun librarian/0)),
   ok.
-
-librarian_supervisor()->
-  % Debugging
-  Pid = spawn(fun librarian/0),
-  register(real_librarian, Pid),
-  erlang:monitor(process, Pid),
-  librarian_supervisor([]).
-
-librarian_supervisor(Calls)->
-  receive
-    {'DOWN', _, process, _, _}->
-      io:format("LIBRARIAN DOWN!!! Calls were:~n~p~n", [lists:reverse(Calls)]);
-    Anything->
-      real_librarian ! Anything,
-      librarian_supervisor([Anything|Calls])
-  end.
 
 librarian()->
   Apps = dict:from_list([{binary_to_list(Name),Id} || [Id,Name] <- execute(applications)]),
@@ -170,30 +155,37 @@ librarian(Apps,Events)->
     {new_app, Name, Pid}->
       case dict:find(Name, Apps) of
         {ok, _Duplicate}->
-          Pid ! {error, duplicate_name},
-          librarian(Apps,Events);
+          librarian_error(Apps, Events, Pid, duplicate_name);
         error->
-          execute(new_app,[Name]),
-          [[Id]] = execute(get_app_id,[Name]),
-          Pid ! {new_app, ok},
-          librarian(dict:store(Name,Id,Apps),Events)
+          case length(Name) > ?MAX_NAME_LENGTH of
+            true->
+              librarian_error(Apps, Events, Pid, name_too_long);
+            false->
+              execute(new_app,[Name]),
+              [[Id]] = execute(get_app_id,[Name]),
+              Pid ! {new_app, ok},
+              librarian(dict:store(Name,Id,Apps),Events)
+          end
       end;
     {new_event, AppName, EventName, Pid}->
       case dict:find(AppName, Apps) of
         {ok, AppId}->
           case dict:find({AppId, EventName}, Events) of
             {ok, _Duplicate}->
-              Pid ! {error, duplicate_name},
-              librarian(Apps,Events);
+              librarian_error(Apps, Events, Pid, duplicate_name);
             error->
-              execute(new_event, [EventName,AppId]),
-              [[Id]] = execute(get_event_id,[AppId,EventName]),
-              Pid ! {new_event, ok},
-              librarian(Apps,dict:store({AppId,EventName},Id,Events))
+              case length(EventName) > ?MAX_NAME_LENGTH of
+                true->
+                  librarian_error(Apps, Events, Pid, name_too_long);
+                false->
+                  execute(new_event, [EventName,AppId]),
+                  [[Id]] = execute(get_event_id,[AppId,EventName]),
+                  Pid ! {new_event, ok},
+                  librarian(Apps,dict:store({AppId,EventName},Id,Events))
+              end
           end;
         error->
-          Pid ! {error, bad_app},
-          librarian(Apps,Events)
+          librarian_error(Apps, Events, Pid, bad_app)
       end;
     {delete_app, AppName, Pid}->
       case dict:find(AppName, Apps) of
@@ -207,8 +199,7 @@ librarian(Apps,Events)->
           Pid ! {delete_app, ok},
           librarian(dict:erase(AppName,Apps),dict:from_list(Irrelevant));
         error->
-          Pid ! {error, bad_app},
-          librarian(Apps,Events)
+          librarian_error(Apps, Events, Pid, bad_app)
       end;
     {delete_event, AppName, EventName, Pid}->
       case dict:find(AppName, Apps) of
@@ -219,12 +210,10 @@ librarian(Apps,Events)->
               Pid ! {delete_event, ok},
               librarian(Apps, dict:erase({AppId, EventName}, Events));
             error->
-              Pid ! {error, bad_event},
-              librarian(Apps,Events)
+              librarian_error(Apps, Events, Pid, bad_event)
           end;
         error->
-          Pid ! {error, bad_app},
-          librarian(Apps,Events)
+          librarian_error(Apps, Events, Pid, bad_app)
       end;
     {applications, Pid}->
       Pid ! {applications, dict:fetch_keys(Apps)},
@@ -239,6 +228,10 @@ librarian(Apps,Events)->
       end,
       librarian(Apps,Events)
   end.
+
+librarian_error(Apps, Events, Pid, Error)->
+  Pid ! {error, Error},
+  librarian(Apps, Events).
 
 librarian_delete_event(EventId)->
   execute(move_logs, [EventId]),
