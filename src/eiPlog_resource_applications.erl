@@ -35,7 +35,9 @@ allowed_methods(ReqData, undefined)->
 allowed_methods(ReqData, all)->{['GET'], ReqData, all}.
 
 content_types_provided(ReqData, Context)->
-  {[{"application/json", to_json}], ReqData, Context}.
+  {[{"application/json", to_json}, 
+    {"text/html", to_json},
+    {"text/plain", to_json}], ReqData, Context}.
 
 delete_resource(ReqData, Context)->
   Res = case eiPlog_mysql:delete_app(dict:fetch(app_name, wrq:path_info(ReqData))) of

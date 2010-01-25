@@ -64,4 +64,6 @@ to_json(ReqData, State) ->
   {Res, ReqData, State}.
 
 content_types_provided(ReqData, Context)->
-  {[{"application/json", to_json}], ReqData, Context}.
+  {[{"application/json", to_json}, 
+    {"text/html", to_json},
+    {"text/plain", to_json}], ReqData, Context}.

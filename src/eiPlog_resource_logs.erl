@@ -78,8 +78,10 @@ to_json(R, S) ->
   Res = rfc4627:encode(Logs),
   {Res, R, S}.
 
-content_types_provided(R,S)->
-  {[{"application/json", to_json}], R, S}.
+content_types_provided(ReqData, Context)->
+  {[{"application/json", to_json}, 
+    {"text/html", to_json},
+    {"text/plain", to_json}], ReqData, Context}.
 
 date_to_string({datetime, {{Year, Month, Day}, {Hour, Minute, Second}}})->
   list_to_binary(lists:flatten(io_lib:format("~4..0b-~2..0b-~2..0b ~2..0b:~2..0b:~2..0b",[Year, Month, Day, Hour, Minute, Second]))).
