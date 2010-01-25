@@ -14,11 +14,15 @@
 -compile(export_all).
 
 connect()->
-  mysql:start_link(p1, "localhost", "rails", "railspw", "eiPlog"),
-  mysql:connect(p1, "localhost", undefined, "rails", "railspw", "eiPlog", true),
-  mysql:connect(p1, "localhost", undefined, "rails", "railspw", "eiPlog", true),
-  mysql:connect(p1, "localhost", undefined, "rails", "railspw", "eiPlog", true),
-  mysql:connect(p1, "localhost", undefined, "rails", "railspw", "eiPlog", true),
+  Props = dict:from_list(file:consult("properties")),
+  [Host, User, Password, Database] = lists:map(fun(X)->
+        dict:fetch(X, Props) 
+    end, [host, user, password, database]),
+  mysql:start_link(p1, Host, User, Password, Database),
+  mysql:connect(p1, Host, undefined, User, Password, Database, true),
+  mysql:connect(p1, Host, undefined, User, Password, Database, true),
+  mysql:connect(p1, Host, undefined, User, Password, Database, true),
+  mysql:connect(p1, Host, undefined, User, Password, Database, true),
   mysql:prepare(logs_add, << "INSERT INTO logs(event_id, time, context, details) VALUES(?, now(), ?, AES_ENCRYPT(?,?))" >>),
   mysql:prepare(logs_by_event_asc, << "SELECT context, time, AES_DECRYPT(details,?) FROM logs WHERE event_id = ? AND time >= ? AND time <= ? ORDER BY time ASC LIMIT ?, ?" >>),
   mysql:prepare(logs_by_context_asc, << "SELECT time, AES_DECRYPT(details,?) FROM logs WHERE event_id = ? AND context = ? AND time >= ? AND time <= ? ORDER BY time ASC LIMIT ?, ?">>),
