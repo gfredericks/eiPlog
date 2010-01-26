@@ -2,8 +2,7 @@
   (:use clojure.contrib.json.read) 
   (:use clojure.contrib.json.write)
   (:use eip.eiPlog.http)
-  (gen-class
-    :name eip.eiPlog.ClojureAPI
+  (:gen-class
     :methods [#^{:static true} [applications [] java.util.List]
               #^{:static true} [events [String] java.util.List]
               #^{:static true} [log [String String String String] void]]))
