@@ -17,7 +17,7 @@ CREATE TABLE IF NOT EXISTS logs(
     id INT NOT NULL AUTO_INCREMENT, PRIMARY KEY(id),
     event_id INT NOT NULL,
     time DATETIME NOT NULL,
-    context VARCHAR(255),
+    context VARCHAR(255) NOT NULL,
     details TEXT NOT NULL,
     INDEX(event_id, context, time),
     INDEX(event_id, time)) ENGINE=InnoDB;

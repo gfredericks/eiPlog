@@ -8,6 +8,8 @@
          delete_resource/2,
          content_types_provided/2,
          to_json/2,
+         post_is_create/2,
+         allow_missing_post/2,
          create_path/2,
          content_types_accepted/2,
          allowed_methods/2]).
@@ -40,8 +42,12 @@ is_conflict(ReqData, State)->
         (not lists:member(AppName, eiPlog_mysql:applications())),
   {Res, ReqData, State}.
 
+post_is_create(R, S)-> {true, R, S}.
+
+allow_missing_post(R, S)->{true, R, S}.
+
 allowed_methods(ReqData, undefined)->
-  {['PUT', 'DELETE'], ReqData, undefined};
+  {['PUT', 'DELETE', 'POST'], ReqData, undefined};
 allowed_methods(ReqData, all)->
   {['GET'], ReqData, all}.
 
