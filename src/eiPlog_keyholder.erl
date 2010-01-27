@@ -2,7 +2,7 @@
 
 %
 % This only exists because I can't figure out any good way of storing
-%   an appropriately global variable in erlang.
+%   an appropriately global command-line-arg-constant in erlang.
 %
 
 -module(eiPlog_keyholder).
