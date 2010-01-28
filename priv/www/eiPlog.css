@@ -36,15 +36,26 @@ div.error{
   font-weight: bold;
 }
 
-#logs{
+#logs_holder{
   border: 4px inset black;
   margin: 10px;
   padding: 10px;
 }
 
-#logs div.log{
+#logs tr.log{
   border: 1px solid black;
   margin: 2px;
+  font-family: monospace;
+}
+
+#logs tr.log td.log_time{
+  font-weight: bold;
+  padding-right: 15px;
+}
+
+#logs tr.log td.log_context{
+  font-style: italic;
+  padding-right: 15px;
 }
 
 body{
@@ -57,4 +68,13 @@ td.appev_holder{
   height: 250px;
   overflow: auto;
   background-color: #DEDEDE;
+}
+
+a.page_link{
+  cursor: pointer;
+  text-decoration: underline;
+}
+
+a.page_link:hover{
+  text-decoration: none;
 }

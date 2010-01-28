@@ -11,6 +11,7 @@
          to_json/2]).
 
 -include_lib("webmachine/include/webmachine.hrl").
+-define(BAD_KEY_JSON, "{\"error\": \"bad-key\"}").
 
 init([]) -> {ok, undefined}.
 
@@ -77,7 +78,15 @@ to_json(R, S) ->
           end, Logs),
       {Count, JSLogs}
   end,
-  Res = rfc4627:encode({obj, [{"total", C}, {"logs", L}]}),
+  
+  Res = case lists:any(fun({obj, [_,_,{"details", undefined}]})->true;(_)->false end, L) of
+    true -> ?BAD_KEY_JSON;
+    false->
+      try rfc4627:encode({obj, [{"total", C}, {"logs", L}]}) of
+        JSON->JSON
+      catch exit:_AnyError -> ?BAD_KEY_JSON
+      end
+  end,
   {Res, R, S}.
 
 content_types_provided(ReqData, Context)->

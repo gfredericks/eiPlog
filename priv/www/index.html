@@ -18,9 +18,32 @@
       </td>
     </tr>
   </table>
-  Context (blank for any): <input type="text" id="eiPlog_context">
-
-  <div id="logs">
+  Context (leave blank to see all): <input type="text" id="eiPlog_context">
+  <br />
+  Results per page: 
+    <select id = "results_per_page">
+      <option value="5">5</option>
+      <option value="10">10</option>
+      <option value="20" selected>20</option>
+      <option value="50">50</option>
+      <option value="100">100</option>
+    </select>
+  <br />
+  Order by: 
+  <input name="radio_order" id="order_asc" type="radio">
+  earliest first
+  <input name="radio_order" id="order_desc" checked type="radio">
+  latest first
+  <br />
+  <button onclick="reload()">Reload</button>
+  <div id="logs_holder">
+    <div style="float:left;">Total: <span id="total_logs_field"></span></div>
+    <div style="float:right;text-align:right;">
+      Pages: <span id="page_links"></span>
+    </div>
+    <hr style="clear:both;" />
+    <div id="logs">
+    </div>
   </div>
 </body>
 </html>
