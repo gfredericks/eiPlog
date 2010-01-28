@@ -11,6 +11,42 @@ div.appev_highlight{
   background-color: #AAE;
 }
 
+div.appev_new{
+  background-color:inherit;
+  cursor:inherit;
+}
+
+div.delete_button{
+  float:right;
+  border: 2px solid black;
+  font-size: smaller;
+  background-color: #EAA;
+}
+
+div.delete_button:hover{
+  background-color: red;
+}
+
+div.error{
+  max-width: 200px;
+  margin-left: auto;
+  margin-right: auto;
+  /*border: 2px solid #EAA;*/
+  text-align: center;
+  font-weight: bold;
+}
+
+#logs{
+  border: 4px inset black;
+  margin: 10px;
+  padding: 10px;
+}
+
+#logs div.log{
+  border: 1px solid black;
+  margin: 2px;
+}
+
 body{
   background-color: #AAA;
 }

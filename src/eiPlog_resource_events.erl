@@ -11,16 +11,17 @@
          post_is_create/2,
          allow_missing_post/2,
          create_path/2,
+         from_text/2,
          content_types_accepted/2,
          allowed_methods/2]).
 
 -include_lib("webmachine/include/webmachine.hrl").
 
-init([]) -> {ok, undefined};
+init([]) -> {{trace, "/tmp"}, undefined};
 init([all]) -> {ok, all}.
 
 content_types_accepted(ReqData, undefined)->
-  {[{"text/plain", create_path}, {"text/html",create_path}], ReqData, undefined}.
+  {[{"text/plain", from_text}, {"text/html", from_text}], ReqData, undefined}.
 
 resource_exists(ReqData, undefined)->
   AppName = wrq:path_info(app_name, ReqData),
@@ -37,10 +38,11 @@ resource_exists(ReqData, all)->
   {Res, ReqData, all}.
 
 is_conflict(ReqData, State)->
-  AppName = wrq:path_info(app_name, ReqData),
-  Res = resource_exists(ReqData, State) orelse 
-        (not lists:member(AppName, eiPlog_mysql:applications())),
-  {Res, ReqData, State}.
+  resource_exists(ReqData, State).
+  %AppName = wrq:path_info(app_name, ReqData),
+  %Res = resource_exists(ReqData, State) orelse 
+  %      (not lists:member(AppName, eiPlog_mysql:applications())),
+  %{Res, ReqData, State}.
 
 post_is_create(R, S)-> {true, R, S}.
 
@@ -58,11 +60,15 @@ delete_resource(ReqData, Context)->
   end,
   {Res, ReqData, Context}.
 
-create_path(ReqData, Context)->
+from_text(ReqData, Context)->
   AppName = wrq:path_info(app_name, ReqData),
   EventName = wrq:path_info(event_name, ReqData),
-  eiPlog_mysql:new_event(AppName, EventName),
-  {AppName ++ "/" ++ EventName, ReqData, Context}.
+  ok = eiPlog_mysql:new_event(AppName, EventName),
+  {true, ReqData, Context}.
+
+create_path(ReqData, Context)->
+  EventName = wrq:path_info(event_name, ReqData),
+  {EventName, ReqData, Context}.
 
 to_json(ReqData, State) ->
   AppName = wrq:path_info(app_name, ReqData),

@@ -60,22 +60,24 @@ to_json(R, S) ->
     _Else->'ASC'
   end,
   [Limit, Page] = lists:map(fun(undefined)->undefined; (Str)->list_to_integer(Str) end, [Lim, Pag]),
-  Logs = case Context of
+  {C, L} = case Context of
     undefined->
-      Ls = eiPlog_mysql:logs(AppName, EventName, Before, After, Key, Order, Limit, Page),
-      lists:map(fun([Con,Tim,Det])->
+      {Logs, Count} = eiPlog_mysql:logs(AppName, EventName, Before, After, Key, Order, Limit, Page),
+      JSLogs = lists:map(fun([Con,Tim,Det])->
             {obj, [{"time", date_to_string(Tim)},
                    {"context", Con},
                    {"details", Det}]}
-          end, Ls);
+          end, Logs),
+      {Count, JSLogs};
     Context->
-      Ls = eiPlog_mysql:logs(AppName, EventName, Context, Before, After, Key, Order, Limit, Page),
-      lists:map(fun([Tim,Det])->
+      {Logs, Count} = eiPlog_mysql:logs(AppName, EventName, Context, Before, After, Key, Order, Limit, Page),
+      JSLogs = lists:map(fun([Tim,Det])->
             {obj, [{"time", date_to_string(Tim)},
                    {"details", Det}]}
-          end, Ls)
+          end, Logs),
+      {Count, JSLogs}
   end,
-  Res = rfc4627:encode(Logs),
+  Res = rfc4627:encode({obj, [{"total", C}, {"logs", L}]}),
   {Res, R, S}.
 
 content_types_provided(ReqData, Context)->

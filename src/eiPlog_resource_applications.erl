@@ -11,6 +11,7 @@
          post_is_create/2,
          allow_missing_post/2,
          create_path/2,
+         from_text/2,
          content_types_accepted/2,
          allowed_methods/2]).
 
@@ -20,7 +21,7 @@ init([]) -> {ok, undefined};
 init([all]) -> {ok, all}.
 
 content_types_accepted(ReqData, State)->
-  {[{"text/plain", create_path}, {"text/html",create_path}], ReqData, State}.
+  {[{"text/plain", from_text}, {"text/html", from_text}], ReqData, State}.
 
 resource_exists(ReqData, undefined)->
   Res = lists:member(wrq:path_info(app_name, ReqData), eiPlog_mysql:applications()),
@@ -54,8 +55,12 @@ delete_resource(ReqData, Context)->
 
 create_path(ReqData, Context)->
   Name = wrq:path_info(app_name, ReqData),
-  eiPlog_mysql:new_app(Name),
   {Name, ReqData, Context}.
+
+from_text(ReqData, Context)->
+  Name = wrq:path_info(app_name, ReqData),
+  ok = eiPlog_mysql:new_app(Name),
+  {true, ReqData, Context}.
 
 to_json(ReqData, all) ->
   Res=rfc4627:encode(lists:map(fun list_to_binary/1, eiPlog_mysql:applications())),

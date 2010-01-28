@@ -10,9 +10,11 @@
          delete_app/1, 
          delete_event/2, 
          applications/0, 
+         good_name/1,
          events/1]).
 -compile(export_all).
 -define(MAX_NAME_LENGTH, 255).
+-define(MIN_NAME_LENGTH, 3).
 
 connect()->
   {ok, [L]} = file:consult("properties"),
@@ -30,6 +32,8 @@ connect()->
   mysql:prepare(logs_by_context_asc, << "SELECT time, AES_DECRYPT(details,?) FROM logs WHERE event_id = ? AND context = ? AND time >= ? AND time <= ? ORDER BY time ASC LIMIT ?, ?">>),
   mysql:prepare(logs_by_event_desc, << "SELECT context, time, AES_DECRYPT(details,?) FROM logs WHERE event_id = ? AND time >= ? AND time <= ? ORDER BY time DESC LIMIT ?, ?" >>),
   mysql:prepare(logs_by_context_desc, << "SELECT time, AES_DECRYPT(details,?) FROM logs WHERE event_id = ? AND context = ? AND time >= ? AND time <= ? ORDER BY time DESC LIMIT ?, ?">>),
+  mysql:prepare(count_by_event, << "SELECT count(1) FROM logs WHERE event_id = ? AND time >= ? AND time <= ?" >>),
+  mysql:prepare(count_by_context, << "SELECT count(1) FROM logs WHERE event_id = ? AND context = ? AND time >= ? AND time <= ?">>),
   mysql:prepare(applications, <<"SELECT id, name FROM applications WHERE deleted_at IS NULL">>),
   mysql:prepare(get_app_id, <<"SELECT id FROM applications WHERE deleted_at IS NULL AND name = ?">>),
   mysql:prepare(new_app, <<"INSERT INTO applications(name,created_at) VALUES(?,now())">>),
@@ -60,13 +64,21 @@ get_event_id(AppName, EventName, Fun)->
 logs(AppName, EventName, Context, Before, After, Key, Order, Limit, Page)->
   {Offset,RowCount} = limit_page(Limit,Page),
   get_event_id(AppName, EventName, fun(EventId)->
-      execute(case Order of 'ASC'->logs_by_context_asc; 'DESC'->logs_by_context_desc end, [Key, EventId, Context, After, Before, Offset, RowCount])
+      Logs = case RowCount of 0->[];
+              _Positive->execute(case Order of 'ASC'->logs_by_context_asc; 'DESC'->logs_by_context_desc end, [Key, EventId, Context, After, Before, Offset, RowCount])
+        end,
+      [[Count]] = execute(count_by_context, [EventId, Context, After, Before]),
+      {Logs, Count}
     end).
 
 logs(AppName, EventName, Before, After, Key, Order, Limit, Page)->
   {Offset,RowCount} = limit_page(Limit,Page),
   get_event_id(AppName, EventName, fun(EventId)->
-      execute(case Order of 'ASC'->logs_by_event_asc; 'DESC'->logs_by_event_desc end, [Key, EventId, After, Before, Offset, RowCount])
+      Logs = case RowCount of 0->[];
+              _Positive->execute(case Order of 'ASC'->logs_by_event_asc; 'DESC'->logs_by_event_desc end, [Key, EventId, After, Before, Offset, RowCount])
+        end,
+      [[Count]] = execute(count_by_event, [EventId, After, Before]),
+      {Logs, Count}
     end).
 
 limit_page(Limit, Page)->
@@ -74,7 +86,8 @@ limit_page(Limit, Page)->
     undefined->{0, 10000000000000000} ;
     A when is_integer(A), A > 0 -> 
       P = case Page of B when is_integer(B), B > 0 ->B; _Else->1 end,
-      {(P-1)*Limit, Limit}
+      {(P-1)*Limit, Limit};
+    A when is_integer(A), A == 0 ->{0,0}
   end.
 
 add_log(AppName, EventName, Context, Details, Key)->
@@ -140,81 +153,15 @@ librarian()->
 librarian(Apps,Events)->
   receive
     {event_id, AppName, EventName, Pid}->
-      Pid ! case dict:find(AppName, Apps) of
-        {ok, AppId}->
-          case dict:find({AppId, EventName}, Events) of
-            {ok, EventId}->
-              {event_id, EventId};
-            error->
-              {error, bad_event}
-          end;
-        error->
-          {error, bad_app}
-      end,
-      librarian(Apps,Events);
+      librarian_event_id(Apps, Events, AppName, EventName, Pid);
     {new_app, Name, Pid}->
-      case dict:find(Name, Apps) of
-        {ok, _Duplicate}->
-          librarian_error(Apps, Events, Pid, duplicate_name);
-        error->
-          case length(Name) > ?MAX_NAME_LENGTH of
-            true->
-              librarian_error(Apps, Events, Pid, name_too_long);
-            false->
-              execute(new_app,[Name]),
-              [[Id]] = execute(get_app_id,[Name]),
-              Pid ! {new_app, ok},
-              librarian(dict:store(Name,Id,Apps),Events)
-          end
-      end;
+      librarian_new_app(Apps, Events, Name, Pid);
     {new_event, AppName, EventName, Pid}->
-      case dict:find(AppName, Apps) of
-        {ok, AppId}->
-          case dict:find({AppId, EventName}, Events) of
-            {ok, _Duplicate}->
-              librarian_error(Apps, Events, Pid, duplicate_name);
-            error->
-              case length(EventName) > ?MAX_NAME_LENGTH of
-                true->
-                  librarian_error(Apps, Events, Pid, name_too_long);
-                false->
-                  execute(new_event, [EventName,AppId]),
-                  [[Id]] = execute(get_event_id,[AppId,EventName]),
-                  Pid ! {new_event, ok},
-                  librarian(Apps,dict:store({AppId,EventName},Id,Events))
-              end
-          end;
-        error->
-          librarian_error(Apps, Events, Pid, bad_app)
-      end;
+      librarian_new_event(Apps, Events, AppName, EventName, Pid);
     {delete_app, AppName, Pid}->
-      case dict:find(AppName, Apps) of
-        {ok, AppId}->
-          {Relevant,Irrelevant} = lists:partition(fun({{AID,_},_}) when AID == AppId ->true;(_)->false end,dict:to_list(Events)),
-          EventIds = [Id || {_,Id} <- Relevant],
-          {atomic,_}=mysql:transaction(p1,fun()->
-              execute(delete_app, [AppId]),
-              lists:foreach(fun librarian_delete_event/1, EventIds)
-            end),
-          Pid ! {delete_app, ok},
-          librarian(dict:erase(AppName,Apps),dict:from_list(Irrelevant));
-        error->
-          librarian_error(Apps, Events, Pid, bad_app)
-      end;
+      librarian_delete_app(Apps, Events, AppName, Pid);
     {delete_event, AppName, EventName, Pid}->
-      case dict:find(AppName, Apps) of
-        {ok, AppId}->
-          case dict:find({AppId, EventName}, Events) of
-            {ok, EventId}->
-              {atomic,_}=mysql:transaction(p1,fun()-> librarian_delete_event(EventId) end),
-              Pid ! {delete_event, ok},
-              librarian(Apps, dict:erase({AppId, EventName}, Events));
-            error->
-              librarian_error(Apps, Events, Pid, bad_event)
-          end;
-        error->
-          librarian_error(Apps, Events, Pid, bad_app)
-      end;
+      librarian_delete_event(Apps, Events, AppName, EventName, Pid);
     {applications, Pid}->
       Pid ! {applications, dict:fetch_keys(Apps)},
       librarian(Apps,Events);
@@ -229,6 +176,93 @@ librarian(Apps,Events)->
       librarian(Apps,Events)
   end.
 
+librarian_event_id(Apps, Events, AppName, EventName, Pid)->
+  Pid ! case dict:find(AppName, Apps) of
+    {ok, AppId}->
+      case dict:find({AppId, EventName}, Events) of
+        {ok, EventId}->
+          {event_id, EventId};
+        error->
+          {error, bad_event}
+      end;
+    error->
+      {error, bad_app}
+  end,
+  librarian(Apps,Events).
+
+librarian_new_app(Apps, Events, Name, Pid)->
+  case dict:find(Name, Apps) of
+    {ok, _Duplicate}->
+      librarian_error(Apps, Events, Pid, duplicate_name);
+    error->
+      case good_name(Name) of
+        false->
+          librarian_error(Apps, Events, Pid, bad_name);
+        true->
+          execute(new_app,[Name]),
+          [[Id]] = execute(get_app_id,[Name]),
+          Pid ! {new_app, ok},
+          librarian(dict:store(Name,Id,Apps),Events)
+      end
+  end.
+
+librarian_new_event(Apps, Events, AppName, EventName, Pid)->
+  case dict:find(AppName, Apps) of
+    {ok, AppId}->
+      case dict:find({AppId, EventName}, Events) of
+        {ok, _Duplicate}->
+          librarian_error(Apps, Events, Pid, duplicate_name);
+        error->
+          case good_name(EventName) of
+            false->
+              librarian_error(Apps, Events, Pid, bad_name);
+            true->
+              updated = execute(new_event, [EventName,AppId]),
+              %[[Id]] = execute(get_event_id,[AppId,EventName]),
+              case execute(get_event_id,[AppId, EventName]) of
+                [[Id]]->
+                  Pid ! {new_event, ok},
+                  librarian(Apps,dict:store({AppId,EventName},Id,Events));
+                []-> io:format("WTF!!!! Cannot create ev name = ~s~n", [EventName])
+              end
+          end
+      end;
+    error->
+      librarian_error(Apps, Events, Pid, bad_app)
+  end.
+
+librarian_delete_app(Apps, Events, AppName, Pid)->
+  case dict:find(AppName, Apps) of
+    {ok, AppId}->
+      {Relevant,Irrelevant} = lists:partition(fun({{AID,_},_}) when AID == AppId ->true;(_)->false end,dict:to_list(Events)),
+      EventIds = [Id || {_,Id} <- Relevant],
+      {atomic,_}=mysql:transaction(p1,fun()->
+          execute(delete_app, [AppId]),
+          lists:foreach(fun librarian_delete_event/1, EventIds)
+        end),
+      Pid ! {delete_app, ok},
+      librarian(dict:erase(AppName,Apps),dict:from_list(Irrelevant));
+    error->
+      librarian_error(Apps, Events, Pid, bad_app)
+  end.
+
+librarian_delete_event(Apps, Events, AppName, EventName, Pid)->
+  case dict:find(AppName, Apps) of
+    {ok, AppId}->
+      case dict:find({AppId, EventName}, Events) of
+        {ok, EventId}->
+          {atomic,_}=mysql:transaction(p1,fun()-> librarian_delete_event(EventId) end),
+          Pid ! {delete_event, ok},
+          librarian(Apps, dict:erase({AppId, EventName}, Events));
+        error->
+          librarian_error(Apps, Events, Pid, bad_event)
+      end;
+    error->
+      librarian_error(Apps, Events, Pid, bad_app)
+  end.
+
+
+
 librarian_error(Apps, Events, Pid, Error)->
   Pid ! {error, Error},
   librarian(Apps, Events).
@@ -237,4 +271,9 @@ librarian_delete_event(EventId)->
   execute(move_logs, [EventId]),
   execute(delete_logs, [EventId]),
   execute(delete_event, [EventId]).
- 
+
+good_name(S)->
+  case re:run(S, lists:flatten(io_lib:format("^[-0-9a-zA-Z_]{~b,~b}$", [?MIN_NAME_LENGTH, ?MAX_NAME_LENGTH]))) of
+    nomatch->false;
+    _Somematch->true
+  end.
