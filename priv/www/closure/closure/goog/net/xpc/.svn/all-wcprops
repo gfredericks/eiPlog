@@ -1,0 +1,71 @@
+K 25
+svn:wc:ra_dav:version-url
+V 43
+/svn/!svn/ver/26/trunk/closure/goog/net/xpc
+END
+iframepollingtransport.js
+K 25
+svn:wc:ra_dav:version-url
+V 68
+/svn/!svn/ver/8/trunk/closure/goog/net/xpc/iframepollingtransport.js
+END
+crosspagechannel_test.html
+K 25
+svn:wc:ra_dav:version-url
+V 69
+/svn/!svn/ver/2/trunk/closure/goog/net/xpc/crosspagechannel_test.html
+END
+nativemessagingtransport_test.html
+K 25
+svn:wc:ra_dav:version-url
+V 77
+/svn/!svn/ver/2/trunk/closure/goog/net/xpc/nativemessagingtransport_test.html
+END
+xpc.js
+K 25
+svn:wc:ra_dav:version-url
+V 50
+/svn/!svn/ver/26/trunk/closure/goog/net/xpc/xpc.js
+END
+nixtransport.js
+K 25
+svn:wc:ra_dav:version-url
+V 58
+/svn/!svn/ver/9/trunk/closure/goog/net/xpc/nixtransport.js
+END
+relay.js
+K 25
+svn:wc:ra_dav:version-url
+V 51
+/svn/!svn/ver/2/trunk/closure/goog/net/xpc/relay.js
+END
+transport.js
+K 25
+svn:wc:ra_dav:version-url
+V 55
+/svn/!svn/ver/2/trunk/closure/goog/net/xpc/transport.js
+END
+iframerelaytransport.js
+K 25
+svn:wc:ra_dav:version-url
+V 67
+/svn/!svn/ver/26/trunk/closure/goog/net/xpc/iframerelaytransport.js
+END
+crosspagechannel.js
+K 25
+svn:wc:ra_dav:version-url
+V 63
+/svn/!svn/ver/26/trunk/closure/goog/net/xpc/crosspagechannel.js
+END
+nativemessagingtransport.js
+K 25
+svn:wc:ra_dav:version-url
+V 70
+/svn/!svn/ver/2/trunk/closure/goog/net/xpc/nativemessagingtransport.js
+END
+frameelementmethodtransport.js
+K 25
+svn:wc:ra_dav:version-url
+V 73
+/svn/!svn/ver/9/trunk/closure/goog/net/xpc/frameelementmethodtransport.js
+END

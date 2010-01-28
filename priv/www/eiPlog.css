@@ -1,3 +1,13 @@
+div.appev_holder{
+  width: 350px;
+  border: 3px double black;
+  height: 250px;
+  max-height: 250px;
+  overflow: auto;
+  background-color: #DEDEDE;
+  padding:10px;
+}
+
 div.appev{
   border: 2px solid black;
   margin: 3px;
@@ -5,6 +15,12 @@ div.appev{
   font-weight:bold;
   cursor: pointer;
   background-color: #AEA;
+}
+
+.appev_head{
+  text-align:center;
+  font-weight:bold;
+  font-size:large;
 }
 
 div.appev_highlight{
@@ -42,6 +58,13 @@ div.error{
   padding: 10px;
 }
 
+#logs{
+  height: 400px;
+  overflow:auto;
+  border: 3px inset gray;
+  background-color: #DEDEDE;
+}
+
 #logs tr.log{
   border: 1px solid black;
   margin: 2px;
@@ -62,12 +85,8 @@ body{
   background-color: #AAA;
 }
 
-td.appev_holder{
-  width: 350px;
-  border: 3px double black;
-  height: 250px;
-  overflow: auto;
-  background-color: #DEDEDE;
+input.time_input{
+  width:30px;
 }
 
 a.page_link{
@@ -77,4 +96,14 @@ a.page_link{
 
 a.page_link:hover{
   text-decoration: none;
+}
+
+#time_div{
+  border: 2px solid black;
+  padding: 10px;
+  margin: 10px;
+}
+
+.arrow_button{
+  font-size: x-large;
 }

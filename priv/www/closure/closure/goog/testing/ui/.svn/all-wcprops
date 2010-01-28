@@ -1,0 +1,23 @@
+K 25
+svn:wc:ra_dav:version-url
+V 46
+/svn/!svn/ver/26/trunk/closure/goog/testing/ui
+END
+rendererharness.js
+K 25
+svn:wc:ra_dav:version-url
+V 64
+/svn/!svn/ver/2/trunk/closure/goog/testing/ui/rendererharness.js
+END
+rendererasserts.js
+K 25
+svn:wc:ra_dav:version-url
+V 65
+/svn/!svn/ver/26/trunk/closure/goog/testing/ui/rendererasserts.js
+END
+style.js
+K 25
+svn:wc:ra_dav:version-url
+V 54
+/svn/!svn/ver/2/trunk/closure/goog/testing/ui/style.js
+END

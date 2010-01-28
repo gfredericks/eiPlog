@@ -1,5 +1,6 @@
 var applications;
 var valid_name = /^[-0-9a-zA-Z_]{3,255}$/;
+var cal_after, cal_before;
 
 function init(callback){
   applications = new Hash();
@@ -22,7 +23,7 @@ function init(callback){
 }
 
 
-document.observe("dom:loaded", init);
+document.observe("dom:loaded", function(){init();setup_cals();});
 
 function get_events(app){
 }
@@ -138,10 +139,16 @@ function get_logs(limit, page, order){
   if(context.length==0)context=undefined;
   var app = get_selected_app();
   var ev = get_selected_event();
+  var before = get_before();
+  var after = get_after();
   if(!app || !ev)return;
   var url = "/logs/"+app+"/"+ev+"?limit="+limit+"&page="+page+"&order="+order+"&key="+$("eiPlog_key").value;
   if(context)
     url = url+"&context="+encodeURIComponent(context);
+  if(before)
+    url = url+"&before="+before;
+  if(after)
+    url = url+"&after="+after;
   new Ajax.Request(url,
       {method: "GET", onSuccess: function(transport){
         show_logs(transport.responseJSON, context, limit, page)}});
@@ -185,10 +192,14 @@ function show_logs(Ob, context, limit, page){
     while(showAfter.length < 3 && afterPages.length > 0)showAfter.push(afterPages.shift());
     // before or after can add more if the other did not use all 3
     var borrow = 6 - showAfter.length - showBefore.length;
-    while(borrow > 0 && beforePages.length > 0)
+    while(borrow > 0 && beforePages.length > 0){
+      borrow--;
       showBefore.unshift(beforePages.pop());
-    while(borrow > 0 && afterPages.length > 0)
+    }
+    while(borrow > 0 && afterPages.length > 0){
+      borrow--;
       showAfter.push(afterPages.shift());
+    }
     // Finally, since we'll be linking to the first and last pages regardless, we don't want to hide
     // just one page, so we check here
     if(beforePages.length < 3)
@@ -199,9 +210,13 @@ function show_logs(Ob, context, limit, page){
     var page_link = function(p){
       return Builder.node("a", {className: "page_link", onClick: "clicked_page("+p+")"}, ""+p);
     };
+    // left arrow
+    if(page > 1)
+      pl.appendChild(Builder.node("button", {onClick: "clicked_page("+(page-1)+")", className: "arrow_button"}, "\u21d0"));
+
     if(beforePages.length > 0){
       pl.appendChild(page_link(1));
-      pl.appendChild(Builder.node("span", "..."));
+      pl.appendChild(Builder.node("span", " \u2022 \u2022 \u2022 "));
     }
     showBefore.each(function(p){
         pl.appendChild(page_link(p));
@@ -213,10 +228,49 @@ function show_logs(Ob, context, limit, page){
         pl.appendChild(page_link(p));
     });
     if(afterPages.length > 0){
-      pl.appendChild(Builder.node("span", "..."));
+      pl.appendChild(Builder.node("span", " \u2022 \u2022 \u2022 "));
       pl.appendChild(page_link(totalPages));
     }
+    // left arrow
+    if(page < totalPages)
+      pl.appendChild(Builder.node("button", {onClick: "clicked_page("+(page+1)+")", className: "arrow_button"}, "\u21d2"));
   }
   else
     pl.appendChild(Builder.node("span", "1"));
+}
+
+// Google calendar widgets
+function setup_cals(){
+  cal_before = new goog.ui.DatePicker(new goog.date.Date()); 
+  cal_before.create($("calendar_before"));
+  cal_after = new goog.ui.DatePicker(new goog.date.Date()); 
+  cal_after.create($("calendar_after"));
+  [cal_before, cal_after].each(function(cal){
+      cal.setUseNarrowWeekdayNames(true);
+      cal.setUseSimpleNavigationMenu(true);
+      cal.setShowWeekNum(false);
+      cal.setAllowNone(false);
+  });
+}
+
+function get_before(){
+  return before_after("check_before", cal_before, "hour_before", "minute_before", "235959", "59");
+}
+
+function get_after(){
+  return before_after("check_after", cal_after, "hour_after", "minute_after", "000000", "00");
+}
+
+function before_after(checkbox, cal, hour, minute, default_time, seconds){
+  if(!$(checkbox).checked)return;
+  ret = cal.getDate().toString();
+  var h = parseInt($(hour).value);
+  var m = parseInt($(minute).value);
+  if($R(0,23).include(h) && $R(0,59).include(m)){
+    var hs = ((h < 10) ? "0" : "") + h;
+    var ms = ((m < 10) ? "0" : "") + m;
+    return ret + hs + ms + seconds;
+  }
+  else
+    return ret + default_time;
 }

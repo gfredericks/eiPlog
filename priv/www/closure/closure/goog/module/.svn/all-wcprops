@@ -1,0 +1,71 @@
+K 25
+svn:wc:ra_dav:version-url
+V 42
+/svn/!svn/ver/26/trunk/closure/goog/module
+END
+module.js
+K 25
+svn:wc:ra_dav:version-url
+V 52
+/svn/!svn/ver/26/trunk/closure/goog/module/module.js
+END
+loader.js
+K 25
+svn:wc:ra_dav:version-url
+V 52
+/svn/!svn/ver/26/trunk/closure/goog/module/loader.js
+END
+basemoduleloader.js
+K 25
+svn:wc:ra_dav:version-url
+V 62
+/svn/!svn/ver/26/trunk/closure/goog/module/basemoduleloader.js
+END
+modulemanager_test.html
+K 25
+svn:wc:ra_dav:version-url
+V 66
+/svn/!svn/ver/26/trunk/closure/goog/module/modulemanager_test.html
+END
+moduleinfo_test.html
+K 25
+svn:wc:ra_dav:version-url
+V 62
+/svn/!svn/ver/2/trunk/closure/goog/module/moduleinfo_test.html
+END
+moduleloader.js
+K 25
+svn:wc:ra_dav:version-url
+V 57
+/svn/!svn/ver/2/trunk/closure/goog/module/moduleloader.js
+END
+modulemanager.js
+K 25
+svn:wc:ra_dav:version-url
+V 59
+/svn/!svn/ver/26/trunk/closure/goog/module/modulemanager.js
+END
+basemodule.js
+K 25
+svn:wc:ra_dav:version-url
+V 55
+/svn/!svn/ver/2/trunk/closure/goog/module/basemodule.js
+END
+abstractmoduleloader.js
+K 25
+svn:wc:ra_dav:version-url
+V 66
+/svn/!svn/ver/26/trunk/closure/goog/module/abstractmoduleloader.js
+END
+moduleinfo.js
+K 25
+svn:wc:ra_dav:version-url
+V 56
+/svn/!svn/ver/26/trunk/closure/goog/module/moduleinfo.js
+END
+moduleloader_test.html
+K 25
+svn:wc:ra_dav:version-url
+V 64
+/svn/!svn/ver/2/trunk/closure/goog/module/moduleloader_test.html
+END

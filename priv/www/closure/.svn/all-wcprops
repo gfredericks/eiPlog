@@ -1,0 +1,29 @@
+K 25
+svn:wc:ra_dav:version-url
+V 22
+/svn/!svn/ver/26/trunk
+END
+LICENSE
+K 25
+svn:wc:ra_dav:version-url
+V 29
+/svn/!svn/ver/9/trunk/LICENSE
+END
+alltests.js
+K 25
+svn:wc:ra_dav:version-url
+V 34
+/svn/!svn/ver/26/trunk/alltests.js
+END
+all_tests.html
+K 25
+svn:wc:ra_dav:version-url
+V 36
+/svn/!svn/ver/2/trunk/all_tests.html
+END
+README
+K 25
+svn:wc:ra_dav:version-url
+V 28
+/svn/!svn/ver/9/trunk/README
+END

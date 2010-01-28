@@ -1,0 +1,95 @@
+K 25
+svn:wc:ra_dav:version-url
+V 42
+/svn/!svn/ver/26/trunk/closure/goog/proto2
+END
+descriptor_test.html
+K 25
+svn:wc:ra_dav:version-url
+V 62
+/svn/!svn/ver/2/trunk/closure/goog/proto2/descriptor_test.html
+END
+serializer.js
+K 25
+svn:wc:ra_dav:version-url
+V 55
+/svn/!svn/ver/2/trunk/closure/goog/proto2/serializer.js
+END
+fielddescriptor_test.html
+K 25
+svn:wc:ra_dav:version-url
+V 67
+/svn/!svn/ver/2/trunk/closure/goog/proto2/fielddescriptor_test.html
+END
+pbliteserializer.js
+K 25
+svn:wc:ra_dav:version-url
+V 62
+/svn/!svn/ver/26/trunk/closure/goog/proto2/pbliteserializer.js
+END
+util.js
+K 25
+svn:wc:ra_dav:version-url
+V 50
+/svn/!svn/ver/26/trunk/closure/goog/proto2/util.js
+END
+descriptor.js
+K 25
+svn:wc:ra_dav:version-url
+V 56
+/svn/!svn/ver/26/trunk/closure/goog/proto2/descriptor.js
+END
+test.pb.js
+K 25
+svn:wc:ra_dav:version-url
+V 52
+/svn/!svn/ver/2/trunk/closure/goog/proto2/test.pb.js
+END
+fielddescriptor.js
+K 25
+svn:wc:ra_dav:version-url
+V 60
+/svn/!svn/ver/9/trunk/closure/goog/proto2/fielddescriptor.js
+END
+lazydeserializer.js
+K 25
+svn:wc:ra_dav:version-url
+V 61
+/svn/!svn/ver/9/trunk/closure/goog/proto2/lazydeserializer.js
+END
+message.js
+K 25
+svn:wc:ra_dav:version-url
+V 53
+/svn/!svn/ver/26/trunk/closure/goog/proto2/message.js
+END
+objectserializer_test.html
+K 25
+svn:wc:ra_dav:version-url
+V 68
+/svn/!svn/ver/2/trunk/closure/goog/proto2/objectserializer_test.html
+END
+proto_test.html
+K 25
+svn:wc:ra_dav:version-url
+V 57
+/svn/!svn/ver/2/trunk/closure/goog/proto2/proto_test.html
+END
+package_test.pb.js
+K 25
+svn:wc:ra_dav:version-url
+V 60
+/svn/!svn/ver/2/trunk/closure/goog/proto2/package_test.pb.js
+END
+pbliteserializer_test.html
+K 25
+svn:wc:ra_dav:version-url
+V 68
+/svn/!svn/ver/2/trunk/closure/goog/proto2/pbliteserializer_test.html
+END
+objectserializer.js
+K 25
+svn:wc:ra_dav:version-url
+V 62
+/svn/!svn/ver/26/trunk/closure/goog/proto2/objectserializer.js
+END

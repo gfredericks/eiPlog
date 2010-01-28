@@ -4,17 +4,37 @@
 <script type="text/javascript" src="/prototype.js"></script>
 <script type="text/javascript" src="/builder.js"></script>
 <script type="text/javascript" src="/eiPlog.js"></script>
+<script src = "closure/closure/goog/base.js"></script>
+<script>
+      goog.require('goog.dom');
+      goog.require('goog.date');
+      goog.require('goog.i18n.DateTimeSymbols');
+      goog.require('goog.i18n.DateTimeSymbols_en_ISO');
+      goog.require('goog.i18n.DateTimeSymbols_en_US');
+      goog.require('goog.locale');
+      goog.require('goog.ui.DatePicker');
+</script>
 <link href="/eiPlog.css" media="screen" rel="stylesheet" type="text/css" /> 
+<link rel="stylesheet" href="datepicker.css">
 </head>
 <body>
-  <h1>eiPlog</h1>
-  <h2>Web Viewer!!</h2>
-  Log encryption key: <input type="password" id="eiPlog_key">
+  <table><tbody><tr><td>
+    <img src="biglog.png" style="width:75px;height:75px;float:left;border:2px solid black;margin-right:10px;">
+  </td><td valign="bottom">
+    <h1 style="padding-bottom:0px;margin-bottom:0px;">eiPlog browser</h1>
+  </td></tr></tbody></table>
+  <hr />
+  Encryption key: <input type="password" id="eiPlog_key">
   <table>
     <tr>
-      <td id="tdApps" class="appev_holder" valign="top">
+      <td class="appev_head">Applications</td>
+      <td class="appev_head">Events</td></tr>
+    <tr>
+      <td>
+        <div id="tdApps" class="appev_holder" valign="top"></div>
       </td>
-      <td id="tdEvs" class="appev_holder" valign="top">
+      <td>
+        <div id="tdEvs" class="appev_holder" valign="top"></div>
       </td>
     </tr>
   </table>
@@ -34,6 +54,37 @@
   earliest first
   <input name="radio_order" id="order_desc" checked type="radio">
   latest first
+  <br />
+  <button onclick="$('time_div').show();this.hide()">
+    Filter by date and time
+  </button>
+  <div id="time_div" style="display:none;">
+    <div style="float:left;margin-right:45px;">
+      <input type="checkbox" onclick="$('time_left').toggle()" id="check_after"> 
+      No logs before sometime
+      <div id="time_left" style="display:none;">
+        <div id="calendar_after"></div>
+        <div style="clear:left;">
+          at 
+          <input type="text" class="time_input" id="hour_after" maxlength=2>:
+          <input type="text" class="time_input" id="minute_after" maxlength=2>
+        </div>
+      </div>
+    </div>
+    <div style="float:left;">
+      <input type="checkbox" onclick="$('time_right').toggle()" id="check_before"> 
+      No logs after sometime
+      <div id="time_right" style="display:none;">
+        <div id="calendar_before"></div>
+        <div style="clear:left;">
+          at 
+          <input type="text" class="time_input" id="hour_before" maxlength=2>:
+          <input type="text" class="time_input" id="minute_before" maxlength=2>
+        </div>
+      </div>
+    </div>
+    <div style="clear:both;"></div>
+  </div>
   <br />
   <button onclick="reload()">Reload</button>
   <div id="logs_holder">
