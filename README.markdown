@@ -39,11 +39,11 @@ Possible query-string values (the first is required):
     language. E.g., limit=30&page=1 returns logs 1..30, and limit=30&page=2 returns
     logs 31..60 etc.
 
-> [{time: "some-time", details: details-string}, ...]
->
-> or
->
-> [{context: "some-context", time: "some-time", details: details-string}, ...]
+> {"total": _, "logs": [{"time": "some-time", "details": details-string}, ...]}
+
+or
+
+> {"total": _, "logs": [{context: "some-context", time: "some-time", details: details-string}, ...]}
 
 ## **Managing Applications**
 
