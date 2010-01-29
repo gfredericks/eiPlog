@@ -124,14 +124,11 @@ function get_selected_app(){
   if(a.length > 0)return a.first().innerHTML;
 }
 
-function reload(){
+function reload(p){
+  if(!p)p=1;
   var order = "ASC";
   if($("order_desc").checked)order = "DESC";
   get_logs($("results_per_page").value, 1, order);
-}
-
-function clicked_page(p){
-  get_logs($("results_per_page").value, p, "ASC");
 }
 
 function get_logs(limit, page, order){
@@ -208,11 +205,11 @@ function show_logs(Ob, context, limit, page){
       while(afterPages.length > 0)showAfter.push(afterPages.shift());
     // Lastly insert the links
     var page_link = function(p){
-      return Builder.node("a", {className: "page_link", onClick: "clicked_page("+p+")"}, ""+p);
+      return Builder.node("a", {className: "page_link", onClick: "reload("+p+")"}, ""+p);
     };
     // left arrow
     if(page > 1)
-      pl.appendChild(Builder.node("button", {onClick: "clicked_page("+(page-1)+")", className: "arrow_button"}, "\u21d0"));
+      pl.appendChild(Builder.node("button", {onClick: "reload("+(page-1)+")", className: "arrow_button"}, "\u21d0"));
 
     if(beforePages.length > 0){
       pl.appendChild(page_link(1));
@@ -233,7 +230,7 @@ function show_logs(Ob, context, limit, page){
     }
     // left arrow
     if(page < totalPages)
-      pl.appendChild(Builder.node("button", {onClick: "clicked_page("+(page+1)+")", className: "arrow_button"}, "\u21d2"));
+      pl.appendChild(Builder.node("button", {onClick: "reload("+(page+1)+")", className: "arrow_button"}, "\u21d2"));
   }
   else
     pl.appendChild(Builder.node("span", "1"));
