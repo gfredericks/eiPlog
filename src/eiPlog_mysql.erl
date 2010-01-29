@@ -48,7 +48,10 @@ connect()->
 execute(What)->execute(What,[]).
 execute(What,Args)->
   case catch mysql:execute(p1,What,Args) of
-    {'EXIT',{noproc,_}}->connect(),execute(What,Args);
+    {'EXIT',{Reason,_}}->
+      io:format("Reconnecting from reason = ~w~n", [Reason]),
+      connect(),
+      execute(What,Args);
     {updated,_}->updated;
     {data,GoodData}->mysql:get_result_rows(GoodData)
   end.

@@ -128,7 +128,7 @@ function reload(p){
   if(!p)p=1;
   var order = "ASC";
   if($("order_desc").checked)order = "DESC";
-  get_logs($("results_per_page").value, 1, order);
+  get_logs($("results_per_page").value, p, order);
 }
 
 function get_logs(limit, page, order){
