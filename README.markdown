@@ -1,3 +1,9 @@
+# Todo
+
+-   AJAX loading GIF for viewer
+-     Also, immediately remove old logs rather than waiting for new ones to come
+-   
+
 # Platform
 
 Erlang and Webmachine
