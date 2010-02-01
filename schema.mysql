@@ -19,8 +19,17 @@ CREATE TABLE IF NOT EXISTS logs(
     time DATETIME NOT NULL,
     context VARCHAR(255) NOT NULL,
     details TEXT NOT NULL,
-    INDEX(event_id, context, time),
-    INDEX(event_id, time)) ENGINE=InnoDB;
+    INDEX with_context (event_id, context, time),
+    INDEX without_context (event_id, time)) ENGINE=InnoDB;
 
 CREATE TABLE IF NOT EXISTS deleted_logs LIKE logs;
 
+DELIMITER //
+
+CREATE PROCEDURE logs_add(eid INT, context VARCHAR(255), details TEXT, kee VARCHAR(255))
+BEGIN
+INSERT INTO logs(event_id, time, context, details) VALUES(eid, now(), context, AES_ENCRYPT(details,kee));
+END
+//
+
+DELIMITER ;

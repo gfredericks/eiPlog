@@ -27,13 +27,12 @@ connect()->
   mysql:connect(p1, Host, undefined, User, Password, Database, true),
   mysql:connect(p1, Host, undefined, User, Password, Database, true),
   mysql:connect(p1, Host, undefined, User, Password, Database, true),
-  mysql:prepare(logs_add, << "INSERT INTO logs(event_id, time, context, details) VALUES(?, now(), ?, AES_ENCRYPT(?,?))" >>),
-  mysql:prepare(logs_by_event_asc, << "SELECT context, time, AES_DECRYPT(details,?) FROM logs WHERE event_id = ? AND time >= ? AND time <= ? ORDER BY time ASC LIMIT ?, ?" >>),
-  mysql:prepare(logs_by_context_asc, << "SELECT time, AES_DECRYPT(details,?) FROM logs WHERE event_id = ? AND context = ? AND time >= ? AND time <= ? ORDER BY time ASC LIMIT ?, ?">>),
-  mysql:prepare(logs_by_event_desc, << "SELECT context, time, AES_DECRYPT(details,?) FROM logs WHERE event_id = ? AND time >= ? AND time <= ? ORDER BY time DESC LIMIT ?, ?" >>),
-  mysql:prepare(logs_by_context_desc, << "SELECT time, AES_DECRYPT(details,?) FROM logs WHERE event_id = ? AND context = ? AND time >= ? AND time <= ? ORDER BY time DESC LIMIT ?, ?">>),
-  mysql:prepare(count_by_event, << "SELECT count(*) FROM logs WHERE event_id = ? AND time >= ? AND time <= ?" >>),
-  mysql:prepare(count_by_context, << "SELECT count(*) FROM logs WHERE event_id = ? AND context = ? AND time >= ? AND time <= ?">>),
+  mysql:prepare(logs_by_event_asc, << "SELECT context, time, AES_DECRYPT(details,?) FROM logs USE INDEX(without_context) WHERE event_id = ? AND time >= ? AND time <= ? ORDER BY time ASC LIMIT ?, ?" >>),
+  mysql:prepare(logs_by_context_asc, << "SELECT time, AES_DECRYPT(details,?) FROM logs USE INDEX(with_context) WHERE event_id = ? AND context = ? AND time >= ? AND time <= ? ORDER BY time ASC LIMIT ?, ?">>),
+  mysql:prepare(logs_by_event_desc, << "SELECT context, time, AES_DECRYPT(details,?) FROM logs USE INDEX(without_context) WHERE event_id = ? AND time >= ? AND time <= ? ORDER BY time DESC LIMIT ?, ?" >>),
+  mysql:prepare(logs_by_context_desc, << "SELECT time, AES_DECRYPT(details,?) FROM logs USE INDEX(with_context) WHERE event_id = ? AND context = ? AND time >= ? AND time <= ? ORDER BY time DESC LIMIT ?, ?">>),
+  mysql:prepare(count_by_event, << "SELECT count(*) FROM logs USE INDEX(without_context) WHERE event_id = ? AND time >= ? AND time <= ?" >>),
+  mysql:prepare(count_by_context, << "SELECT count(*) FROM logs USE INDEX(with_context) WHERE event_id = ? AND context = ? AND time >= ? AND time <= ?">>),
   mysql:prepare(applications, <<"SELECT id, name FROM applications WHERE deleted_at IS NULL">>),
   mysql:prepare(get_app_id, <<"SELECT id FROM applications WHERE deleted_at IS NULL AND name = ?">>),
   mysql:prepare(new_app, <<"INSERT INTO applications(name,created_at) VALUES(?,now())">>),
@@ -45,6 +44,18 @@ connect()->
   mysql:prepare(move_logs, <<"INSERT INTO deleted_logs (SELECT * FROM logs WHERE event_id = ?)">>),
   mysql:prepare(delete_logs, <<"DELETE FROM logs WHERE event_id = ?">>),
   ok.
+call_proc(What)->call_proc(What,[]).
+call_proc(What,Args)->
+  QB = list_to_binary(lists:flatten(io_lib:format("CALL ~w(~s)", [What, string:join([mysql:encode(X) || X<-Args], ", ")]))),
+  case catch mysql:fetch(p1, QB) of
+    {'EXIT',{Reason,_}}->
+      io:format("Reconnecting from reason = ~w~n", [Reason]),
+      connect(),
+      execute(What,Args);
+    {updated,_}->updated;
+    {data,GoodData}->mysql:get_result_rows(GoodData)
+  end.
+
 execute(What)->execute(What,[]).
 execute(What,Args)->
   case catch mysql:execute(p1,What,Args) of
@@ -95,7 +106,7 @@ limit_page(Limit, Page)->
 
 add_log(AppName, EventName, Context, Details, Key)->
   get_event_id(AppName, EventName, fun(EventId)->
-      execute(logs_add, [EventId, Context, Details, Key]), ok
+      call_proc(logs_add, [EventId, Context, Details, Key]), ok
     end).
 
 new_app(AppName)->

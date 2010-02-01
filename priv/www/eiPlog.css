@@ -74,6 +74,7 @@ div.error{
 #logs tr.log td.log_time{
   font-weight: bold;
   padding-right: 15px;
+  white-space: nowrap;
 }
 
 #logs tr.log td.log_context{
