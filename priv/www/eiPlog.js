@@ -153,6 +153,8 @@ function get_logs(limit, order, pageKey){
     params.set("after", after);
   var url = "/logs/"+app+"/"+ev+"?"+params.toQueryString();
   clear_results();
+  $("bprev").disabled=true;
+  $("bnext").disabled=true;
   new Ajax.Request(url,
       {method: "GET", onSuccess: function(transport){
         show_logs(transport.responseJSON, context, limit, pageKey)},

@@ -37,7 +37,7 @@ process_post(R,S)->
   Context = binary_to_list(CBinary),
   Details = binary_to_list(DBinary),
   Res=eiPlog_mysql:add_log(AppName, EventName, Context, Details, eiPlog_keyholder:get_key()),
-  {Res == ok, R, S}.
+  {Res == updated, R, S}.
 
 to_json(R, S) ->
   AppName = wrq:path_info(app_name, R),

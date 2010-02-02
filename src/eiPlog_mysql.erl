@@ -108,14 +108,9 @@ pagekey(undefined, 'ASC')->-1;
 pagekey(undefined, 'DESC')->?MYSQL_INFINITY;
 pagekey(Defined, _) when is_integer(Defined), Defined > 0 -> Defined.
 
-add_log_prep(AppName, EventName, Context, Details, Key)->
-  get_event_id(AppName, EventName, fun(EventId)->
-      execute(logs_add, [EventId, Context, Details, Key]), ok
-    end).
-
 add_log(AppName, EventName, Context, Details, Key)->
   get_event_id(AppName, EventName, fun(EventId)->
-      call_proc(logs_add, [EventId, Context, Details, Key]), ok
+      call_proc(logs_add, [EventId, Context, Details, Key])
     end).
 
 new_app(AppName)->
