@@ -46,7 +46,7 @@ Possible query-string values (the first is required):
 -   **page_key**: a positive integer. For first page, omit this argument. For subsequent
     pages, give the number returned as "next-page" by the previous page
 
-> {"total": _, "next-page": _, "logs": [{"time": "some-time", "details": details-string}, ...]}
+> {"total": \_, "next-page": \_, "logs": [{"time": "some-time", "details": details-string}, ...]}
 
 or
 
