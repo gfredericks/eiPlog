@@ -3,6 +3,7 @@
 -   AJAX loading GIF for viewer
 -   Create an eiPlog application with events for changes and errors
 -   In the js applet, note whenever the query settings are changed so that the next/prev buttons won't act unexpectedly (i.e., disable them)
+-   Rethink the GET LOGS indexes. Maybe there is a way to do it efficiently (caching the time values??).
 
 
 # Platform
