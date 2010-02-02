@@ -1,10 +1,8 @@
 # Todo
 
 -   AJAX loading GIF for viewer
--     Also, immediately remove old logs rather than waiting for new ones to come
--   Check return codes - need to make sure callers can verify that logs were added
--   Analyze indexes
 -   Create an eiPlog application with events for changes and errors
+-   In the js applet, note whenever the query settings are changed so that the next/prev buttons won't act unexpectedly (i.e., disable them)
 
 
 # Platform
