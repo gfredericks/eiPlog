@@ -44,13 +44,13 @@ Possible query-string values (the first is required):
 -   **order**: either "ASC" or "DESC"; otherwise order is unspecified
 -   **limit**: a positive integer, the maximum logs to return
 -   **page_key**: a positive integer. For first page, omit this argument. For subsequent
-    pages, give the number returned as "next-page" by the previous page
+    pages, give the number returned as "next_page" by the previous page
 
-> {"total": \_, "next-page": \_, "logs": [{"time": "some-time", "details": details-string}, ...]}
+> {"total": \_, "next_page": \_, "logs": [{"time": "some-time", "details": details-string}, ...]}
 
 or
 
-> {"total": _, "logs": [{context: "some-context", time: "some-time", details: details-string}, ...]}
+> {"total": \_, "next_page": \_, "logs": [{context: "some-context", time: "some-time", details: details-string}, ...]}
 
 ## **Managing Applications**
 
