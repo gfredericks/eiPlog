@@ -88,9 +88,18 @@
   <br />
   <button onclick="reload()">Reload</button>
   <div id="logs_holder">
-    <div style="float:left;">Total: <span id="total_logs_field"></span></div>
+    <div style="float:left;">Total: <span id="total_logs_field"></span>
+      <span id="page_num"></span>
+      <span id="new_results_warning" style="display:none;">
+        More logs have been added since your last search! Click "reload" to
+        include the new logs.
+      </span>
+    </div>
     <div style="float:right;text-align:right;">
-      Pages: <span id="page_links"></span>
+      <span id="page_links">
+        <button id="bprev" onclick="go_back()" disabled=true>&larr;</button>
+        <button id="bnext" onclick="go_forward()" disabled=true>&rarr;</button>
+      </span>
     </div>
     <hr style="clear:both;" />
     <div id="logs">

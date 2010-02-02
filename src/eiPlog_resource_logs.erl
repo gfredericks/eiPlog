@@ -42,9 +42,9 @@ process_post(R,S)->
 to_json(R, S) ->
   AppName = wrq:path_info(app_name, R),
   EventName = wrq:path_info(event_name, R),
-  [Bef, Aft, Key, Context, Ord, Lim, Pag] = 
+  [Bef, Aft, Key, Context, Ord, Lim, PK] = 
     lists:map(fun(Str)->wrq:get_qs_value(Str,R) end, 
-      ["before", "after", "key", "context", "order", "limit", "page"]),
+      ["before", "after", "key", "context", "order", "limit", "page_key"]),
   Before = case Bef of
     undefined->
       {datetime, {{3010,1,1}, {1,1,1}}};
@@ -60,29 +60,30 @@ to_json(R, S) ->
     "DESC"->'DESC';
     _Else->'ASC'
   end,
-  [Limit, Page] = lists:map(fun(undefined)->undefined; (Str)->list_to_integer(Str) end, [Lim, Pag]),
-  {C, L} = case Context of
+  [Limit, PageKey] = lists:map(fun(undefined)->undefined; (Str)->list_to_integer(Str) end, [Lim, PK]),
+  {C, L, NP} = case Context of
     undefined->
-      {Logs, Count} = eiPlog_mysql:logs(AppName, EventName, Before, After, Key, Order, Limit, Page),
+      {Logs, Count, NextPage} = eiPlog_mysql:logs(AppName, EventName, Before, After, Key, Order, Limit, PageKey),
       JSLogs = lists:map(fun([Con,Tim,Det])->
             {obj, [{"time", date_to_string(Tim)},
                    {"context", Con},
                    {"details", Det}]}
           end, Logs),
-      {Count, JSLogs};
+      {Count, JSLogs, NextPage};
     Context->
-      {Logs, Count} = eiPlog_mysql:logs(AppName, EventName, Context, Before, After, Key, Order, Limit, Page),
+      {Logs, Count, NextPage} = eiPlog_mysql:logs(AppName, EventName, Context, Before, After, Key, Order, Limit, PageKey),
       JSLogs = lists:map(fun([Tim,Det])->
             {obj, [{"time", date_to_string(Tim)},
                    {"details", Det}]}
           end, Logs),
-      {Count, JSLogs}
+      {Count, JSLogs, NextPage}
   end,
   
   Res = case lists:any(fun({obj, [_,_,{"details", undefined}]})->true;(_)->false end, L) of
     true -> ?BAD_KEY_JSON;
     false->
-      try rfc4627:encode({obj, [{"total", C}, {"logs", L}]}) of
+      NextPage1 = case NP of undefined->[]; Defined->[{"next_page", Defined}] end,
+      try rfc4627:encode({obj, [{"total", C}, {"logs", L}] ++ NextPage1}) of
         JSON->JSON
       catch exit:_AnyError -> ?BAD_KEY_JSON
       end

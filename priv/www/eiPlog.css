@@ -99,12 +99,18 @@ a.page_link:hover{
   text-decoration: none;
 }
 
+#new_results_warning{
+  text-size: larger;
+  color: #E44;
+  font-weight: bold;
+}
+
 #time_div{
   border: 2px solid black;
   padding: 10px;
   margin: 10px;
 }
 
-.arrow_button{
+#page_links button{
   font-size: x-large;
 }

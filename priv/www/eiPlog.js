@@ -1,4 +1,5 @@
 var applications;
+var pageStack;
 var valid_name = /^[-0-9a-zA-Z_]{3,255}$/;
 var cal_after, cal_before;
 
@@ -67,7 +68,8 @@ function click_app(app){
 function clear_results(){
   $("logs").childElements().each(Element.remove);
   $("total_logs_field").innerHTML="";
-  $("page_links").childElements().each(Element.remove);
+  $("page_num").innerHTML="";
+  $("new_results_warning").hide();
 }
 
 function delete_app(app){
@@ -124,14 +126,15 @@ function get_selected_app(){
   if(a.length > 0)return a.first().innerHTML;
 }
 
-function reload(p){
-  if(!p)p=1;
+function reload(pk){
+  if(!pk)
+    pageStack = [];
   var order = "ASC";
   if($("order_desc").checked)order = "DESC";
-  get_logs($("results_per_page").value, p, order);
+  get_logs($("results_per_page").value, order, pk);
 }
 
-function get_logs(limit, page, order){
+function get_logs(limit, order, pageKey){
   var context = $("eiPlog_context").value;
   if(context.length==0)context=undefined;
   var app = get_selected_app();
@@ -139,16 +142,21 @@ function get_logs(limit, page, order){
   var before = get_before();
   var after = get_after();
   if(!app || !ev)return;
-  var url = "/logs/"+app+"/"+ev+"?limit="+limit+"&page="+page+"&order="+order+"&key="+$("eiPlog_key").value;
+  var params = $H({limit:limit, order: order, key: $("eiPlog_key").value});
+  if(pageKey)
+    params.set("page_key", pageKey);
   if(context)
-    url = url+"&context="+encodeURIComponent(context);
+    params.set("context", context);
   if(before)
-    url = url+"&before="+before;
+    params.set("before", before);
   if(after)
-    url = url+"&after="+after;
+    params.set("after", after);
+  var url = "/logs/"+app+"/"+ev+"?"+params.toQueryString();
+  clear_results();
   new Ajax.Request(url,
       {method: "GET", onSuccess: function(transport){
-        show_logs(transport.responseJSON, context, limit, page)}});
+        show_logs(transport.responseJSON, context, limit, pageKey)},
+        onFailure: function(transport){alert("Request failed with status: "+transport.status);}});
 }
 
 function show_logs(Ob, context, limit, page){
@@ -156,7 +164,6 @@ function show_logs(Ob, context, limit, page){
     alert("Error: "+Ob.error);
     return;
   }
-  clear_results();
   var logs = Ob.logs;
   $("total_logs_field").innerHTML = Ob.total;
   var el = $("logs");
@@ -170,70 +177,36 @@ function show_logs(Ob, context, limit, page){
           Builder.node("td", {className: "log_context"}, log.context || context),
           Builder.node("td", {className: "log_details"}, log.details)]);
       }))));
-  // Make page links
-  var pl = $("page_links");
-  if(logs.length < Ob.total){
-    /*
-     * This part endeavors to display an intuitive and helpful range of page-links, while still hiding some
-     *   if there are too many
-     */
-    var beforePages = $A($R(1,page-1));
-    var totalPages = Ob.total / limit;
-    // Rounding up. There _must_ be a better way to do this.
-    if(Math.floor(totalPages) < totalPages)totalPages = Math.floor(totalPages)+1;
-    var afterPages = $A($R(page+1,totalPages));
-    var showBefore = [];
-    var showAfter = [];
-    // Show at least 3 pages before and after
-    while(showBefore.length < 3 && beforePages.length > 0)showBefore.unshift(beforePages.pop());
-    while(showAfter.length < 3 && afterPages.length > 0)showAfter.push(afterPages.shift());
-    // before or after can add more if the other did not use all 3
-    var borrow = 6 - showAfter.length - showBefore.length;
-    while(borrow > 0 && beforePages.length > 0){
-      borrow--;
-      showBefore.unshift(beforePages.pop());
-    }
-    while(borrow > 0 && afterPages.length > 0){
-      borrow--;
-      showAfter.push(afterPages.shift());
-    }
-    // Finally, since we'll be linking to the first and last pages regardless, we don't want to hide
-    // just one page, so we check here
-    if(beforePages.length < 3)
-      while(beforePages.length > 0)showBefore.unshift(beforePages.pop());
-    if(afterPages.length < 3)
-      while(afterPages.length > 0)showAfter.push(afterPages.shift());
-    // Lastly insert the links
-    var page_link = function(p){
-      return Builder.node("a", {className: "page_link", onClick: "reload("+p+")"}, ""+p);
-    };
-    // left arrow
-    if(page > 1)
-      pl.appendChild(Builder.node("button", {onClick: "reload("+(page-1)+")", className: "arrow_button"}, "\u21d0"));
-
-    if(beforePages.length > 0){
-      pl.appendChild(page_link(1));
-      pl.appendChild(Builder.node("span", " \u2022 \u2022 \u2022 "));
-    }
-    showBefore.each(function(p){
-        pl.appendChild(page_link(p));
-        pl.appendChild(Builder.node("span", ", "));
-    });
-    pl.appendChild(Builder.node("span",{style: "font-weight:bold;"}, ""+page));
-    showAfter.each(function(p){
-        pl.appendChild(Builder.node("span", ", "));
-        pl.appendChild(page_link(p));
-    });
-    if(afterPages.length > 0){
-      pl.appendChild(Builder.node("span", " \u2022 \u2022 \u2022 "));
-      pl.appendChild(page_link(totalPages));
-    }
-    // left arrow
-    if(page < totalPages)
-      pl.appendChild(Builder.node("button", {onClick: "reload("+(page+1)+")", className: "arrow_button"}, "\u21d2"));
-  }
+  // Here we note the total number of records, or check if it has changed
+  if(!pageStack.total)
+    pageStack.total=Ob.total;
   else
-    pl.appendChild(Builder.node("span", "1"));
+    if(pageStack.total != Ob.total)
+      $("new_results_warning").show();
+
+  var isPrev = pageStack.length > 0;
+  var isNext = pageStack.total > (pageStack.length+1)*limit;
+  $("bprev").disabled=!isPrev;
+  $("bnext").disabled=!isNext;
+  pageStack.push(Ob.next_page);
+  if(isPrev || isNext){
+    var totalPages = pageStack.length;
+    if(isNext){
+      totalPages = Math.floor(pageStack.total/limit);
+      if(pageStack.total % limit > 0)totalPages++;
+    }
+    $("page_num").innerHTML=", Page: "+pageStack.length+" of "+totalPages;
+  }
+}
+
+function go_back(){
+  pageStack.pop();
+  pageStack.pop();
+  reload(pageStack.last());
+}
+
+function go_forward(){
+  reload(pageStack.last());
 }
 
 // Google calendar widgets
