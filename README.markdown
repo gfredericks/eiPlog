@@ -43,12 +43,10 @@ Possible query-string values (the first is required):
     in the query string
 -   **order**: either "ASC" or "DESC"; otherwise order is unspecified
 -   **limit**: a positive integer, the maximum logs to return
--   **page**: a positive integer; if "limit" was specified, this will do what
-    you would expect it to do, but I'm having trouble putting that in precise
-    language. E.g., limit=30&page=1 returns logs 1..30, and limit=30&page=2 returns
-    logs 31..60 etc.
+-   **page_key**: a positive integer. For first page, omit this argument. For subsequent
+    pages, give the number returned as "next-page" by the previous page
 
-> {"total": _, "logs": [{"time": "some-time", "details": details-string}, ...]}
+> {"total": _, "next-page": _, "logs": [{"time": "some-time", "details": details-string}, ...]}
 
 or
 
