@@ -85,7 +85,7 @@ to_json(R, S) ->
       NextPage1 = case NP of undefined->[]; Defined->[{"next_page", Defined}] end,
       try rfc4627:encode({obj, [{"total", C}, {"logs", L}] ++ NextPage1}) of
         JSON->JSON
-      catch exit:_AnyError -> ?BAD_KEY_JSON
+        catch exit:AnyError -> rfc4627:encode({obj, [{"error", lists:flatten(io_lib:format("~w", [AnyError]))}]})
       end
   end,
   {Res, R, S}.
