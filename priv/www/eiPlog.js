@@ -167,7 +167,6 @@ function show_logs(Ob, context, limit, page){
     return;
   }
   var logs = Ob.logs;
-  $("total_logs_field").innerHTML = Ob.total;
   var el = $("logs");
   if(logs.length == 0)
     el.appendChild(Builder.node("div", {className: "error"}, "No logs"));
@@ -186,6 +185,7 @@ function show_logs(Ob, context, limit, page){
     if(pageStack.total != Ob.total)
       $("new_results_warning").show();
 
+  $("total_logs_field").innerHTML = pageStack.total;
   var isPrev = pageStack.length > 0;
   var isNext = pageStack.total > (pageStack.length+1)*limit;
   $("bprev").disabled=!isPrev;

@@ -16,8 +16,17 @@
     (get-something (format "/events/%s" app-name))))
 
 (defn -log [app-name event-name context details]
+  ;(.setProperty (System/getProperties) "http.keepAlive" "false")
   (post-something
     (format "/logs/%s/%s" app-name event-name)
     (json-str
       {:context context
        :details details})))
+
+(defn -main []
+  (doseq [n (range 1 100)]
+    (println n)
+    (-log "gary" "remote" "A" (format "All my %d are belong to" n))))
+
+(defn new-event [app event]
+  (put-something (format "/events/%s/%s" app event) ""))

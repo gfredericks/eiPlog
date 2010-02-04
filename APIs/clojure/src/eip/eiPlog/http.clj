@@ -2,6 +2,7 @@
   eip.eiPlog.http
   (:import [java.net URLEncoder])
   (:import [java.io File FileInputStream]) 
+  (:require [clojure.contrib.http.connection :as c])
   (:require [clojure.contrib.str-utils2 :as s])
   (:require [clojure.contrib.http.agent :as ag]))
 
@@ -15,14 +16,16 @@
 
 (defn post-something
   [path body]
-  (ag/http-agent
-    (str
-      http-path
-      path)
-    :body body
-    :headers {"Content-Type" "application/json"
-              "Accept" "application/json"}
-    :method "POST"))
+  (ag/string
+    (ag/http-agent
+      (str
+        http-path
+        path)
+      :body body
+      :headers {"Content-Type" "application/json"
+                "Accept" "application/json"
+                "Connection" "close"}
+      :method "POST")))
 
 (defn put-something
   [path body]
@@ -62,3 +65,14 @@
         :headers
           {"Accept" "application/json"}
         ))))
+
+(defn do-it-yourself [context details]
+  (let [conn (c/http-connection "http://log.eip.sc.gov:8000/logs/gary/remote")]
+    (.setRequestMethod conn "POST")
+    (doseq [[name value] {"Content-Type" "application/json" "Accept" "application/json"}]
+      (.setRequestProperty conn name value))
+    (c/start-http-connection conn (format "{\"context\": \"%s\", \"details\": \"%s\"}" context details))
+    (let [rc (.getResponseCode conn)]
+      (.close (.getContent conn))
+      rc)))
+
