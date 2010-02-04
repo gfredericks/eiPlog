@@ -16,16 +16,18 @@
 
 (defn post-something
   [path body]
-  (ag/string
-    (ag/http-agent
-      (str
-        http-path
-        path)
-      :body body
-      :headers {"Content-Type" "application/json"
-                "Accept" "application/json"
-                "Connection" "close"}
-      :method "POST")))
+  (let [a
+        (ag/http-agent
+          (str
+            http-path
+            path)
+          :body body
+          :headers {"Content-Type" "application/json"
+                    "Accept" "application/json"
+                    "Connection" "close"}
+          :method "POST")]
+    (ag/string a)
+    (ag/status a)))
 
 (defn put-something
   [path body]
