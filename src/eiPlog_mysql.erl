@@ -2,8 +2,7 @@
 
 -module(eiPlog_mysql).
 -export([init/0,
-         logs/8, 
-         logs/9, 
+         logs/4,
          add_log/5, 
          new_app/1, 
          new_event/2, 
@@ -29,10 +28,11 @@ connect()->
   mysql:connect(p1, Host, undefined, User, Password, Database, true),
   mysql:connect(p1, Host, undefined, User, Password, Database, true),
   mysql:prepare(logs_add, << "INSERT INTO logs(event_id, time, context, details) VALUES(?, now(), ?, AES_ENCRYPT(?,?))" >>),
-  mysql:prepare(logs_by_event_asc, << "SELECT id, context, time, AES_DECRYPT(details,?) FROM logs USE INDEX(without_context) WHERE event_id = ? AND time BETWEEN ? AND ? AND id > ? ORDER BY time ASC, id ASC LIMIT ?" >>),
-  mysql:prepare(logs_by_context_asc, << "SELECT id, time, AES_DECRYPT(details,?) FROM logs USE INDEX(with_context) WHERE event_id = ? AND context = ? AND time BETWEEN ? AND ? AND id > ? ORDER BY time ASC, id ASC LIMIT ?">>),
-  mysql:prepare(logs_by_event_desc, << "SELECT id, context, time, AES_DECRYPT(details,?) FROM logs USE INDEX(without_context) WHERE event_id = ? AND time BETWEEN ? AND ? AND id < ? ORDER BY time DESC, id DESC LIMIT ?" >>),
-  mysql:prepare(logs_by_context_desc, << "SELECT id, time, AES_DECRYPT(details,?) FROM logs USE INDEX(with_context) WHERE event_id = ? AND context = ? AND time BETWEEN ? AND ? AND id < ? ORDER BY time DESC, id DESC LIMIT ?">>),
+  mysql:prepare(get_time, << "SELECT time FROM logs WHERE id = ?" >>),
+  mysql:prepare(logs_by_event_asc, << "SELECT id, context, time, AES_DECRYPT(details,?) FROM logs USE INDEX(without_context) WHERE event_id = ? AND (time > ? OR (time = ? AND id > ?)) ORDER BY time ASC, id ASC LIMIT ?" >>),
+  mysql:prepare(logs_by_context_asc, << "SELECT id, time, AES_DECRYPT(details,?) FROM logs USE INDEX(with_context) WHERE event_id = ? AND context = ? AND (time > ? OR (time = ? AND id > ?)) ORDER BY time ASC, id ASC LIMIT ?">>),
+  mysql:prepare(logs_by_event_desc, << "SELECT id, context, time, AES_DECRYPT(details,?) FROM logs USE INDEX(without_context) WHERE event_id = ? AND (time < ? OR (time = ? AND id < ?)) ORDER BY time DESC, id DESC LIMIT ?" >>),
+  mysql:prepare(logs_by_context_desc, << "SELECT id, time, AES_DECRYPT(details,?) FROM logs USE INDEX(with_context) WHERE event_id = ? AND context = ? AND (time < ? OR (time = ? AND id < ?)) ORDER BY time DESC, id DESC LIMIT ?">>),
   mysql:prepare(count_by_event, << "SELECT count(*) FROM logs USE INDEX(without_context) WHERE event_id = ? AND time BETWEEN ? AND ?" >>),
   mysql:prepare(count_by_context, << "SELECT count(*) FROM logs USE INDEX(with_context) WHERE event_id = ? AND context = ? AND time BETWEEN ? AND ?">>),
   mysql:prepare(applications, <<"SELECT id, name FROM applications WHERE deleted_at IS NULL">>),
@@ -46,6 +46,7 @@ connect()->
   mysql:prepare(move_logs, <<"INSERT INTO deleted_logs (SELECT * FROM logs WHERE event_id = ?)">>),
   mysql:prepare(delete_logs, <<"DELETE FROM logs WHERE event_id = ?">>),
   ok.
+
 call_proc(What)->call_proc(What,[]).
 call_proc(What,Args)->
   QB = list_to_binary(lists:flatten(io_lib:format("CALL ~w(~s)", [What, string:join([mysql:encode(X) || X<-Args], ", ")]))),
@@ -77,36 +78,38 @@ get_event_id(AppName, EventName, Fun)->
     {error, Problem}->Problem
   end.
 
-logs(AppName, EventName, Context, Before, After, Key, Order, Limit, PageKey)->
-  get_event_id(AppName, EventName, fun(EventId)->
-      Prep = case Order of 'ASC'->logs_by_context_asc; 'DESC'->logs_by_context_desc end,
-      logs1(EventId, [Context], Before, After, Key, Order, Limit, PageKey, Prep, count_by_context)
+
+
+
+
+% Valid options: 
+%   {context, 'string()'}
+%   {before, 'datetime'}
+%   {after, 'datetime'}
+%   {order, 'ASC' | 'DESC'}
+%   {limit, 'integer()'}
+%   {page_key, 'string()'}
+%   
+
+logs(AppName, EventName, Key, Options)->
+  get_event_id(AppName, EventName,
+    fun(EventId)->
+        logs1(EventId, Key, logs_options(Options))
     end).
 
-logs(AppName, EventName, Before, After, Key, Order, Limit, PageKey)->
-  get_event_id(AppName, EventName, fun(EventId)->
-      Prep = case Order of 'ASC'->logs_by_event_asc; 'DESC'->logs_by_event_desc end,
-      logs1(EventId, [], Before, After, Key, Order, Limit, PageKey, Prep, count_by_event)
-    end).
+logs_options(Opts)->
+  logs_options(Opts, list_to_tuple([undefined || _ <- [x,x,x,x,x,x,x]])).
 
-logs1(EventId, ContextList, Before, After, Key, Order, Limit, PageKey, Prep, CountPrep)->
-  IDRestraint = pagekey(PageKey, Order),
-  RowCount = case Limit of undefined->?MYSQL_INFINITY; Defined when is_integer(Defined), Defined >= 0->Defined end,
-  Logs = case RowCount of 0->[];
-      _Positive->execute(Prep, [Key, EventId] ++ ContextList ++ [After, Before, IDRestraint, RowCount])
-    end,
-  [[Count]] = execute(CountPrep, [EventId] ++ ContextList ++ [After, Before]),
-  {UnidentifiedLogs, NextPage} = strip_ids_last_id(Logs),
-  {UnidentifiedLogs, Count, NextPage}.
+logs_options([],Params)->Params;
+logs_options([{context, 
 
-strip_ids_last_id([])->{[], undefined};
-strip_ids_last_id(Logs)->strip_ids_last_id(Logs,[]).
-strip_ids_last_id([[Id|Rec]], UnID)->{lists:reverse([Rec|UnID]), Id};
-strip_ids_last_id([[_|Rec]|Rest], UnID)->strip_ids_last_id(Rest, [Rec|UnID]).
+logs1(EID, Key, {Before, After, Context, Order, Limit, TimeConstraint, IdConstraint})->
 
-pagekey(undefined, 'ASC')->-1;
-pagekey(undefined, 'DESC')->?MYSQL_INFINITY;
-pagekey(Defined, _) when is_integer(Defined), Defined > 0 -> Defined.
+
+
+
+
+
 
 add_log(AppName, EventName, Context, Details, Key)->
   get_event_id(AppName, EventName, fun(EventId)->
