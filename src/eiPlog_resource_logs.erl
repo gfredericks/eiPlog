@@ -42,48 +42,29 @@ process_post(R,S)->
 to_json(R, S) ->
   AppName = wrq:path_info(app_name, R),
   EventName = wrq:path_info(event_name, R),
-  [Bef, Aft, Key, Context, Ord, Lim, PK] = 
-    lists:map(fun(Str)->wrq:get_qs_value(Str,R) end, 
-      ["before", "after", "key", "context", "order", "limit", "page_key"]),
-  Before = case Bef of
-    undefined->
-      {datetime, {{3010,1,1}, {1,1,1}}};
-    String1->parse_date(String1)
-  end,
-  After = case Aft of
-    undefined->
-      {datetime, {{1995,1,1}, {1,1,1}}};
-    String2->parse_date(String2)
-  end,
-  Order = case Ord of
-    "ASC"->'ASC';
-    "DESC"->'DESC';
-    _Else->'ASC'
-  end,
-  [Limit, PageKey] = lists:map(fun(undefined)->undefined; (Str)->list_to_integer(Str) end, [Lim, PK]),
-  {C, L, NP} = case Context of
-    undefined->
-      {Logs, Count, NextPage} = eiPlog_mysql:logs(AppName, EventName, Before, After, Key, Order, Limit, PageKey),
-      JSLogs = lists:map(fun([Con,Tim,Det])->
-            {obj, [{"time", date_to_string(Tim)},
-                   {"context", Con},
-                   {"details", Det}]}
-          end, Logs),
-      {Count, JSLogs, NextPage};
-    Context->
-      {Logs, Count, NextPage} = eiPlog_mysql:logs(AppName, EventName, Context, Before, After, Key, Order, Limit, PageKey),
-      JSLogs = lists:map(fun([Tim,Det])->
-            {obj, [{"time", date_to_string(Tim)},
-                   {"details", Det}]}
-          end, Logs),
-      {Count, JSLogs, NextPage}
-  end,
-  
-  Res = case lists:any(fun({obj, [_,_,{"details", undefined}]})->true;(_)->false end, L) of
+  Options = [X || {_, V} = X <-
+    lists:map(fun(Str)->{list_to_atom(Str),wrq:get_qs_value(Str,R)} end, 
+      ["before", "after", "context", "order", "limit", "page_key"]),
+    V/=undefined],
+  Options2 = lists:map(fun({limit, L})->{limit, list_to_integer(L)};
+                          ({order, "DESC"})->{order, 'DESC'};
+                          ({order, "ASC"})->{order, 'ASC'};
+                          ({before, Date})->{before, parse_date(Date)};
+                          ({'after', Date})->{'after', parse_date(Date)};
+                          (X)->X end, Options),
+
+  {Logs, Count, Prev, Next} = eiPlog_mysql:logs(AppName, EventName, wrq:get_qs_value("key", R), Options2),
+  Ob = {obj, [X || {_, V} = X <- [{"total", Count},
+                                  {"next_page", Next},
+                                  {"prev_page", Prev},
+                                  {"logs", Logs}], V/=undefined]},
+ 
+  % If any details came in as undefined, or if JSON throws an error, likely
+  %   there was a bad key given
+  Res = case lists:any(fun({obj, KVs})->lists:any(fun({"details", undefined})->true;(_)->false end, KVs) end, Logs) of
     true -> ?BAD_KEY_JSON;
     false->
-      NextPage1 = case NP of undefined->[]; Defined->[{"next_page", Defined}] end,
-      try rfc4627:encode({obj, [{"total", C}, {"logs", L}] ++ NextPage1}) of
+      try rfc4627:encode(Ob) of
         JSON->JSON
         catch exit:AnyError -> rfc4627:encode({obj, [{"error", lists:flatten(io_lib:format("~w", [AnyError]))}]})
       end
@@ -94,9 +75,6 @@ content_types_provided(ReqData, Context)->
   {[{"application/json", to_json}, 
     {"text/html", to_json},
     {"text/plain", to_json}], ReqData, Context}.
-
-date_to_string({datetime, {{Year, Month, Day}, {Hour, Minute, Second}}})->
-  list_to_binary(lists:flatten(io_lib:format("~4..0b-~2..0b-~2..0b ~2..0b:~2..0b:~2..0b",[Year, Month, Day, Hour, Minute, Second]))).
 
 parse_date([A,B,C,D,E,F,G,H,I,J,K,L,M,N])->
   {datetime, {{list_to_integer([A,B,C,D]),

@@ -15,6 +15,9 @@
 -define(MAX_NAME_LENGTH, 255).
 -define(MIN_NAME_LENGTH, 3).
 -define(MYSQL_INFINITY, 10000000000000000).
+-define(BASE_QUERY_WITH_CONTEXT, "SELECT id, time, AES_DECRYPT(details, ~s) FROM logs USE INDEX(with_context) WHERE event_id = ~s AND context = ~s").
+-define(BASE_QUERY_WITHOUT_CONTEXT, "SELECT id, time, context, AES_DECRYPT(details, ~s) FROM logs USE INDEX(without_context) WHERE event_id = ~s").
+-record(get_params, {before, 'after', context, order, limit, page_key}).
 
 connect()->
   {ok, [L]} = file:consult("properties"),
@@ -29,10 +32,6 @@ connect()->
   mysql:connect(p1, Host, undefined, User, Password, Database, true),
   mysql:prepare(logs_add, << "INSERT INTO logs(event_id, time, context, details) VALUES(?, now(), ?, AES_ENCRYPT(?,?))" >>),
   mysql:prepare(get_time, << "SELECT time FROM logs WHERE id = ?" >>),
-  mysql:prepare(logs_by_event_asc, << "SELECT id, context, time, AES_DECRYPT(details,?) FROM logs USE INDEX(without_context) WHERE event_id = ? AND (time > ? OR (time = ? AND id > ?)) ORDER BY time ASC, id ASC LIMIT ?" >>),
-  mysql:prepare(logs_by_context_asc, << "SELECT id, time, AES_DECRYPT(details,?) FROM logs USE INDEX(with_context) WHERE event_id = ? AND context = ? AND (time > ? OR (time = ? AND id > ?)) ORDER BY time ASC, id ASC LIMIT ?">>),
-  mysql:prepare(logs_by_event_desc, << "SELECT id, context, time, AES_DECRYPT(details,?) FROM logs USE INDEX(without_context) WHERE event_id = ? AND (time < ? OR (time = ? AND id < ?)) ORDER BY time DESC, id DESC LIMIT ?" >>),
-  mysql:prepare(logs_by_context_desc, << "SELECT id, time, AES_DECRYPT(details,?) FROM logs USE INDEX(with_context) WHERE event_id = ? AND context = ? AND (time < ? OR (time = ? AND id < ?)) ORDER BY time DESC, id DESC LIMIT ?">>),
   mysql:prepare(count_by_event, << "SELECT count(*) FROM logs USE INDEX(without_context) WHERE event_id = ? AND time BETWEEN ? AND ?" >>),
   mysql:prepare(count_by_context, << "SELECT count(*) FROM logs USE INDEX(with_context) WHERE event_id = ? AND context = ? AND time BETWEEN ? AND ?">>),
   mysql:prepare(applications, <<"SELECT id, name FROM applications WHERE deleted_at IS NULL">>),
@@ -78,10 +77,6 @@ get_event_id(AppName, EventName, Fun)->
     {error, Problem}->Problem
   end.
 
-
-
-
-
 % Valid options: 
 %   {context, 'string()'}
 %   {before, 'datetime'}
@@ -94,20 +89,119 @@ get_event_id(AppName, EventName, Fun)->
 logs(AppName, EventName, Key, Options)->
   get_event_id(AppName, EventName,
     fun(EventId)->
-        logs1(EventId, Key, logs_options(Options))
+        % Sorting ensures that 'before' and 'after' come before 'page_key'
+        logs1(EventId, Key, logs_options(lists:sort(Options)))
     end).
 
 logs_options(Opts)->
-  logs_options(Opts, list_to_tuple([undefined || _ <- [x,x,x,x,x,x,x]])).
+  lists:foldl(fun logs_options/2, #get_params{order='ASC'}, Opts).
 
-logs_options([],Params)->Params;
-logs_options([{context, 
+logs_options({'after', {datetime,{{_,_,_},{_,_,_}}}=A}, P) -> P#get_params{'after'=A};
+logs_options({before, {datetime,{{_,_,_},{_,_,_}}}=B}, P) -> P#get_params{before=B};
+logs_options({context, CTX}, P) when is_list(CTX); is_binary(CTX)->
+  P#get_params{context=CTX};
+logs_options({limit, L}, P) when is_integer(L),  L >= 0 -> P#get_params{limit=L};
+logs_options({order, O}, P) when O == 'DESC'; O == 'ASC' -> P#get_params{order=O};
+logs_options({page_key, [C|_]=PK}, P) when C==$n; C==$p ->
+  P#get_params{page_key=PK}.
 
-logs1(EID, Key, {Before, After, Context, Order, Limit, TimeConstraint, IdConstraint})->
+logs1(EID, Key, Params)->
+  {Data, Prev, Next} = logs_data(EID, Key, Params),
+  Count = logs_count(EID, Params),
+  Logs = lists:map(fun([Time, Context, Details])->{obj, [{"time", date_to_string(Time)}, {"context", Context}, {"details", Details}]};
+      ([Time, Details])->{obj, [{"time", date_to_string(Time)}, {"details", Details}]} end, Data),
+  {Logs, Count, Prev, Next}.
+
+logs_data(EID, Key, Params)->
+  {Op,Rev} = (fun
+      (_,undefined)->{undefined, false};
+      ('ASC', [$n|_])->{">", false};
+      ('ASC', [$p|_])->{"<", true};
+      ('DESC', [$n|_])->{"<", false};
+      ('DESC', [$p|_])->{">", true}
+    end)(Params#get_params.order, Params#get_params.page_key),
+
+  Query = 
+    % Initial query, with or without context
+    lists:flatten(case Params#get_params.context of
+      undefined->
+        io_lib:format(?BASE_QUERY_WITHOUT_CONTEXT, [mysql:encode(X)||X<-[Key, EID]]);
+      CTX->
+        io_lib:format(?BASE_QUERY_WITH_CONTEXT, [mysql:encode(X)||X<-[Key,EID,CTX]])
+    end) ++ 
+
+    % Before and After
+    case Params#get_params.'after' of
+      undefined->"";
+      SomeTime->
+        case Op of ">"->"";_->" AND time >= " ++ mysql:encode(SomeTime) end
+    end ++
+    case Params#get_params.before of
+      undefined->"";
+      OtherTime->
+        case Op of "<"->"";_->" AND time <= " ++ mysql:encode(OtherTime) end
+    end ++
+
+    case Params#get_params.page_key of
+      undefined->"";
+      [_|PK]->
+        Id = list_to_integer(PK),
+        [[Time]] = execute(get_time, [Id]),
+        " AND (time " ++ Op ++ " " ++ mysql:encode(Time) ++ " OR (time = " ++
+          mysql:encode(Time) ++ " AND id " ++ Op ++ " " ++ mysql:encode(Id) ++ "))"
+    end ++
 
 
+    case Params#get_params.order of
+      undefined->"";
+      O->
+        O1 = case {O,Rev} of {'ASC',true}->'DESC';
+                             {'DESC', true}->'ASC';
+                             {_,false}->O end,
+        Ord = atom_to_list(O1),
+        " ORDER BY time " ++ Ord ++ ", id " ++ Ord
+    end ++
+    case Params#get_params.limit of
+      undefined->"";
+      L->" LIMIT " ++ integer_to_list(L+1) % Pull extra record to check for more
+    end,
+  D = mysql:get_result_rows(element(2,mysql:fetch(p1, Query))),
+  {DD, Extra} = case Params#get_params.limit of undefined->{D, undefined}; 
+    LL->
+      case (catch lists:split(LL, D)) of
+        {'EXIT',_}->{D,[]};
+        Worked->Worked
+      end
+  end,
+  Data = case Rev of true->lists:reverse(DD);false->DD end,
+  {Next, Prev} = 
+    case Params#get_params.limit of
+      undefined->{undefined, undefined};
+      _Elze->
+        NN = list_to_binary([$n|integer_to_list(hd(lists:last(Data)))]),
+        PP = list_to_binary([$p|integer_to_list(hd(hd(Data)))]),
+        case Rev of
+          false->
+            {case Extra of []->undefined;_Else->NN end,
+              case Params#get_params.page_key of undefined->undefined; _Else->PP end};
+          true->
+            {NN, case Extra of []->undefined;_else->PP end}
+        end
+    end,
+  {[tl(Rec) || Rec <- Data], Prev, Next}.
 
+logs_count(EID, #get_params{before=undefined}=P)->
+  logs_count(EID, P#get_params{before={datetime, {{3005,1,1},{1,1,1}}}});
 
+logs_count(EID, #get_params{'after'=undefined}=P)->
+  logs_count(EID, P#get_params{'after'={datetime, {{1995,1,1},{1,1,1}}}});
+
+logs_count(EID, #get_params{'after'=A, before=B, context=undefined})->
+  [[C]]=execute(count_by_event, [EID, A, B]),
+  C;
+logs_count(EID, #get_params{'after'=A, before=B, context=CTX})->
+  [[C]]=execute(count_by_context, [EID, CTX, A, B]),
+  C.
 
 
 
@@ -298,3 +392,7 @@ good_name(S)->
     nomatch->false;
     _Somematch->true
   end.
+
+date_to_string({datetime, {{Year, Month, Day}, {Hour, Minute, Second}}})->
+  list_to_binary(lists:flatten(io_lib:format("~4..0b-~2..0b-~2..0b ~2..0b:~2..0b:~2..0b",[Year, Month, Day, Hour, Minute, Second]))).
+

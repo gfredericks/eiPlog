@@ -128,7 +128,7 @@ function get_selected_app(){
 
 function reload(pk){
   if(!pk)
-    pageStack = [];
+    pageStack = {};
   var order = "ASC";
   if($("order_desc").checked)order = "DESC";
   get_logs($("results_per_page").value, order, pk);
@@ -178,37 +178,20 @@ function show_logs(Ob, context, limit, page){
           Builder.node("td", {className: "log_context"}, log.context || context),
           Builder.node("td", {className: "log_details"}, log.details)]);
       }))));
-  // Here we note the total number of records, or check if it has changed
-  if(!pageStack.total)
-    pageStack.total=Ob.total;
-  else
-    if(pageStack.total != Ob.total)
-      $("new_results_warning").show();
 
-  $("total_logs_field").innerHTML = pageStack.total;
-  var isPrev = pageStack.length > 0;
-  var isNext = pageStack.total > (pageStack.length+1)*limit;
-  $("bprev").disabled=!isPrev;
-  $("bnext").disabled=!isNext;
-  pageStack.push(Ob.next_page);
-  if(isPrev || isNext){
-    var totalPages = pageStack.length;
-    if(isNext){
-      totalPages = Math.floor(pageStack.total/limit);
-      if(pageStack.total % limit > 0)totalPages++;
-    }
-    $("page_num").innerHTML=", Page: "+pageStack.length+" of "+totalPages;
-  }
+  $("total_logs_field").innerHTML = Ob.total;
+  $("bprev").disabled=!Ob.prev_page;
+  $("bnext").disabled=!Ob.next_page;
+  pageStack.next=Ob.next_page;
+  pageStack.prev=Ob.prev_page;
 }
 
 function go_back(){
-  pageStack.pop();
-  pageStack.pop();
-  reload(pageStack.last());
+  reload(pageStack.prev);
 }
 
 function go_forward(){
-  reload(pageStack.last());
+  reload(pageStack.next);
 }
 
 // Google calendar widgets
