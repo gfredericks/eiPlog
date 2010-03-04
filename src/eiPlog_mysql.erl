@@ -1,4 +1,4 @@
-%% @author Gary Fredericks
+%%% @author Gary Fredericks
 
 -module(eiPlog_mysql).
 -export([init/0,
@@ -175,9 +175,9 @@ logs_data(EID, Key, Params)->
   end,
   Data = case Rev of true->lists:reverse(DD);false->DD end,
   {Next, Prev} = 
-    case Params#get_params.limit of
-      undefined->{undefined, undefined};
-      _Elze->
+    if
+      Params#get_params.limit == undefined; length(Data) == 0 ->{undefined, undefined};
+      true->
         NN = list_to_binary([$n|integer_to_list(hd(lists:last(Data)))]),
         PP = list_to_binary([$p|integer_to_list(hd(hd(Data)))]),
         case Rev of
